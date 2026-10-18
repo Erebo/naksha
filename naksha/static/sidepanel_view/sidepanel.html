@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
   <title>নকশা — ২ডি জিআইএস সাইড প্যানেল</title>
   
   <!-- Inter & Noto Sans Bengali Fonts -->
@@ -15,6 +16,17 @@
 
   <!-- Modern Linear / Stripe Cockpit Stylesheet -->
   <link rel="stylesheet" href="sidepanel.css">
+  <style>
+    html, body {
+      background: #09090B;
+      background-color: var(--bg, #09090B);
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overscroll-behavior: none;
+    }
+  </style>
 </head>
 <body>
   <!-- 0. Automated Officer Verification Screen (Appears before Cockpit) -->
@@ -99,10 +111,14 @@
     <span id="sp-detected-portal">ভূমি কর পোর্টাল</span>
   </div>
 
-  <!-- 3. VERDICT HERO CARD (Bento ~110px expanded / 38px collapsed) -->
-  <div id="sp-verdict-hero-container">
-    <!-- Injected dynamically by VerdictHero.js -->
-  </div>
+  <!-- Main Naksha Cockpit Container (Fluid 1-col on <700px, 2-col on >=700px) -->
+  <div class="sp-cockpit-layout" id="sp-cockpit">
+    <!-- Left Column: Hero + Map (pinned/stacked on >=700px) -->
+    <div class="sp-col-left">
+      <!-- 3. VERDICT HERO CARD (Bento ~110px expanded / 38px collapsed) -->
+      <div id="sp-verdict-hero-container">
+        <!-- Injected dynamically by VerdictHero.js -->
+      </div>
 
   <!-- 4. HERO GIS MAP (Default 25% height, min 160px, max 30vh) -->
   <div class="sp-map-panel" id="sp-map-panel">
@@ -210,11 +226,11 @@
     </div>
   </div>
 
-  <!-- Resizer Handle -->
-  <div class="sp-map-resizer" id="sp-map-resizer" title="ড্র্যাগ করে ম্যাপের উচ্চতা পরিবর্তন করুন / Drag to resize map">
-    <div class="sp-resizer-line"></div>
-  </div>
-  <nav class="sp-tab-nav">
+    </div><!-- end .sp-col-left -->
+
+    <!-- Right Column: Tabs + Tab Panels -->
+    <div class="sp-col-right">
+      <nav class="sp-tab-nav">
     <button class="sp-tab-item active" data-tab="tab-overview">
       <span id="tab-icon-overview"></span>
       <span class="tab-label" id="tab-lbl-overview">সারসংক্ষেপ</span>
@@ -269,6 +285,8 @@
       <div id="audit-chain-container"></div>
     </section>
   </main>
+</div><!-- end .sp-col-right -->
+</div><!-- end #sp-cockpit -->
 
   <!-- Leaflet Local Bundle -->
   <script src="vendor/leaflet/leaflet.js"></script>

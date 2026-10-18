@@ -11,17 +11,103 @@
 
 @import url('tokens.css');
 
-html, body {
-  width: 100%;
-  max-width: 420px;
-  overflow-x: hidden !important;
+html, body, #root, #sp-cockpit, .sp-verification-overlay {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  background: var(--bg) !important;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  background: var(--bg) !important;
+  color: var(--text-main);
+  font-family: var(--font-sans);
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overscroll-behavior: none;
+  background: var(--bg) !important;
+}
+
+iframe, :host {
+  background: var(--bg) !important;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
 }
 
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+/* Fluid Cockpit Layout: 1-col on <700px, 2-col on >=700px */
+.sp-cockpit-layout {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-canvas);
+}
+
+.sp-col-left {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  min-width: 0;
+  background: var(--bg-canvas);
+}
+
+.sp-col-right {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  background: var(--bg-canvas);
+}
+
+/* 2-Column Responsive Layout for Panels >= 700px */
+@media (min-width: 700px) {
+  .sp-cockpit-layout {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .sp-col-left {
+    width: 48%;
+    max-width: 500px;
+    border-right: 1px solid var(--border-subtle);
+    overflow-y: auto;
+    padding-bottom: 16px;
+    height: 100%;
+  }
+
+  .sp-col-right {
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .sp-map-panel {
+    height: 380px !important;
+    max-height: 480px !important;
+  }
+
+  .sp-tab-nav {
+    border-top: none;
+  }
 }
 
 .bento-row-cards > *,
@@ -140,7 +226,9 @@ html, body {
    3. Verdict Hero Card (Bento ~110px expanded / 38px collapsed)
    ============================================================================== */
 #sp-verdict-hero-container {
-  margin: 6px 12px 4px;
+  padding: 6px 12px 4px;
+  margin: 0;
+  background: var(--bg-canvas);
   flex-shrink: 0;
 }
 
@@ -329,7 +417,7 @@ html, body {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: #09090B;
+  background: var(--bg);
   flex-shrink: 0;
   transition: height 160ms cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -349,7 +437,7 @@ html, body {
 #sp-map {
   width: 100%;
   height: 100%;
-  background: #09090B;
+  background: var(--bg);
   background-image: 
     linear-gradient(rgba(38, 38, 44, 0.3) 1px, transparent 1px),
     linear-gradient(90deg, rgba(38, 38, 44, 0.3) 1px, transparent 1px);
@@ -376,7 +464,7 @@ html, body {
 }
 
 .sp-ctrl-btn {
-  background: rgba(17, 17, 20, 0.92);
+  background: var(--bg-surface);
   backdrop-filter: blur(4px);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
@@ -392,6 +480,7 @@ html, body {
   gap: 4px;
   cursor: pointer;
   transition: all 120ms ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 .sp-ctrl-btn:hover {
   background: var(--bg-surface-elevated);
@@ -411,7 +500,7 @@ html, body {
   pointer-events: none;
 }
 .sp-north-arrow {
-  background: rgba(17, 17, 20, 0.85);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
   font-size: 9px;
@@ -421,9 +510,10 @@ html, body {
   display: flex;
   align-items: center;
   gap: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 .sp-scale-badge {
-  background: rgba(17, 17, 20, 0.85);
+  background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   color: var(--text-muted);
   font-size: 9px;
@@ -496,7 +586,8 @@ html, body {
   transition: color 120ms ease;
 }
 .sp-layer-toggle-row:hover {
-  color: #FFFFFF;
+  color: var(--text-main);
+  font-weight: 600;
 }
 .sp-layer-left {
   display: flex;
@@ -630,7 +721,7 @@ html, body {
   background: var(--bg-surface);
   border-top: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
-  padding: 0 6px;
+  padding: 0 4px;
   display: flex;
   justify-content: space-between;
   align-items: stretch;
@@ -638,11 +729,17 @@ html, body {
   z-index: 100;
   flex-shrink: 0;
   box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.sp-tab-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .sp-tab-item {
-  flex: 1;
-  min-width: 0;
+  flex: 1 0 auto;
+  min-width: fit-content;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -650,7 +747,7 @@ html, body {
   font-family: inherit;
   font-size: 11px;
   font-weight: 600;
-  padding: 0 2px;
+  padding: 0 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -663,9 +760,9 @@ html, body {
   color: var(--text-main);
 }
 .sp-tab-item.active {
-  color: #FFFFFF;
+  color: var(--text-main);
   font-weight: 700;
-  border-bottom-color: #FFFFFF;
+  border-bottom-color: var(--border-focus);
 }
 
 /* ==============================================================================
@@ -674,12 +771,16 @@ html, body {
 .sp-tab-container {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: none;
+  background: var(--bg-canvas);
   padding: 8px 12px 24px;
   box-sizing: border-box;
 }
 
 .sp-panel {
   display: none;
+  background: var(--bg-canvas);
+  min-height: 100%;
 }
 .sp-panel.active {
   display: block;
@@ -712,7 +813,7 @@ html, body {
 
 .bento-row-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -754,7 +855,7 @@ html, body {
   position: absolute;
   top: -1px;
   bottom: -1px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--bg-surface-2);
   border-left: 1px dotted var(--text-muted);
   border-right: 1px dotted var(--text-muted);
 }
@@ -921,6 +1022,8 @@ html, body {
   align-items: flex-start;
   margin: 12px 0 16px;
   padding: 0 4px;
+  flex-wrap: wrap;
+  gap: 8px 4px;
 }
 .lmt-axis-line {
   position: absolute;
@@ -931,6 +1034,16 @@ html, body {
   background: var(--border-subtle);
   z-index: 1;
 }
+@media (max-width: 360px) {
+  .lmt-axis-line {
+    display: none;
+  }
+  .lineage-minimal-track {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
 .lmt-node {
   position: relative;
   z-index: 2;
@@ -939,6 +1052,7 @@ html, body {
   align-items: center;
   text-align: center;
   flex: 1;
+  min-width: 60px;
 }
 .lmt-dot {
   width: 10px;
@@ -951,7 +1065,7 @@ html, body {
 }
 .lmt-node.active-node .lmt-dot {
   background: var(--accent-brand);
-  border-color: #FFFFFF;
+  border-color: var(--border-focus);
   box-shadow: 0 0 8px rgba(45, 212, 191, 0.6);
 }
 .lmt-era {
@@ -1223,10 +1337,11 @@ html, body {
   position: fixed;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
-  max-width: 420px;
-  height: 100vh;
-  background: #09090B;
+  height: 100%;
+  background: var(--bg);
   z-index: 999999;
   display: flex;
   flex-direction: column;

@@ -5,16 +5,25 @@
    ============================================================================== */
 
 :root {
+  color-scheme: dark;
+
   /* Neutral Graphite Dark Theme (Default) */
+  --bg: #09090B;
   --bg-app: #09090B;
+  --bg-canvas: #09090B;
+  --surface: #111114;
   --bg-surface: #111114;
+  --surface-2: #18181C;
   --bg-surface-2: #18181C;
   --bg-surface-elevated: #202026;
+  --border: #26262C;
   --border-subtle: #26262C;
   --border-focus: #FFFFFF;
 
   /* Typography Colors */
+  --text: #F4F4F5;
   --text-main: #F4F4F5;
+  --muted: #9A9AA5;
   --text-muted: #9A9AA5;
   --text-dim: #52525B;
   --text-inverse: #09090B;
@@ -64,14 +73,22 @@
 
 /* Light Theme Variables */
 [data-theme="light"] {
-  --bg-app: #FAFAFA;
+  color-scheme: light;
+  --bg: #F4F4F5;
+  --bg-app: #F4F4F5;
+  --bg-canvas: #F4F4F5;
+  --surface: #FFFFFF;
   --bg-surface: #FFFFFF;
-  --bg-surface-2: #F4F4F5;
-  --bg-surface-elevated: #E4E4E7;
+  --surface-2: #E4E4E7;
+  --bg-surface-2: #E4E4E7;
+  --bg-surface-elevated: #D4D4D8;
+  --border: #D4D4D8;
   --border-subtle: #E4E4E7;
   --border-focus: #18181B;
 
+  --text: #18181B;
   --text-main: #18181B;
+  --muted: #71717A;
   --text-muted: #71717A;
   --text-dim: #A1A1AA;
   --text-inverse: #FFFFFF;
@@ -89,7 +106,7 @@
 
 body {
   font-family: var(--font-bn), var(--font-sans);
-  background-color: var(--bg-app);
+  background-color: var(--bg);
   color: var(--text-main);
   line-height: 1.4;
   height: 100vh;

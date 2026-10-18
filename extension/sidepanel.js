@@ -483,10 +483,11 @@ function initMapResizer() {
   const mapPanel = document.getElementById('sp-map-panel');
   if (!resizer || !mapPanel) return;
 
-  // Restore remembered height from session state
-  const savedHeight = sessionStorage.getItem('naksha_map_height');
-  if (savedHeight) {
-    mapPanel.style.height = savedHeight;
+  // Restore remembered height from session state (as percentage of window.innerHeight)
+  const savedPercent = sessionStorage.getItem('naksha_map_height_pct');
+  if (savedPercent && window.innerWidth < 700) {
+    const calculatedPx = Math.max(120, Math.min(window.innerHeight * 0.65, window.innerHeight * parseFloat(savedPercent)));
+    mapPanel.style.height = `${calculatedPx}px`;
   }
 
   let startY = 0;
@@ -503,7 +504,8 @@ function initMapResizer() {
     resizer.classList.remove('active');
     document.removeEventListener('mousemove', onMouseMove);
     document.removeEventListener('mouseup', onMouseUp);
-    sessionStorage.setItem('naksha_map_height', mapPanel.style.height);
+    const pct = parseFloat(mapPanel.getBoundingClientRect().height) / window.innerHeight;
+    sessionStorage.setItem('naksha_map_height_pct', String(pct));
     if (state.map) state.map.invalidateSize();
   };
 
@@ -630,9 +632,27 @@ function initMap() {
       }
     }, 120);
 
-    window.addEventListener('resize', () => {
-      if (state.map) state.map.invalidateSize();
-    });
+    // Attach ResizeObserver to map panel for live smooth scaling on pane drag
+    let resizeTimer = null;
+    const handleMapResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (state.map) {
+          state.map.invalidateSize({ debounceMoveEvents: true });
+          if (state.targetBounds && state.targetBounds.isValid && state.targetBounds.isValid()) {
+            state.map.fitBounds(state.targetBounds, { padding: [35, 35], maxZoom: 20 });
+          }
+        }
+      }, 50);
+    };
+
+    if (window.ResizeObserver) {
+      const ro = new ResizeObserver(() => handleMapResize());
+      ro.observe(mapContainer);
+      const mapPanelEl = document.getElementById('sp-map-panel');
+      if (mapPanelEl) ro.observe(mapPanelEl);
+    }
+    window.addEventListener('resize', handleMapResize);
 
     return true;
   } catch (mapErr) {
@@ -742,6 +762,14 @@ async function loadContextAndPlotData() {
       const btn = document.getElementById('sp-btn-lang');
       if (btn) btn.textContent = currentLang === 'bn' ? 'EN' : 'বাং';
       updateLanguageStrings();
+    }
+
+    const themeParam = params.get('theme');
+    if (themeParam && (themeParam === 'light' || themeParam === 'dark') && themeParam !== currentTheme) {
+      currentTheme = themeParam;
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      const icon = document.getElementById('sp-theme-icon');
+      if (icon) icon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
     }
 
     const dagParam = params.get('dag');
