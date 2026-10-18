@@ -84,7 +84,7 @@ const LAYER_CONFIG = {
   },
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+function initSidePanelApp() {
   injectSvgIcons();
   initTabs();
   initLanguageToggle();
@@ -104,7 +104,13 @@ document.addEventListener('DOMContentLoaded', () => {
       loadContextAndPlotData();
     }
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSidePanelApp);
+} else {
+  initSidePanelApp();
+}
 
 // 0. Automated Officer Verification Runner
 async function runAutomaticOfficerVerification(onVerifiedCallback) {
