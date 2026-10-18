@@ -214,20 +214,20 @@ async function runAutomaticOfficerVerification(onVerifiedCallback) {
     return;
   }
 
-  // 1. Step 1: Approved government portal check (~300ms)
-  await new Promise((r) => setTimeout(r, 320));
+  // 1. Step 1: Approved government portal check (~1.8s)
+  await new Promise((r) => setTimeout(r, 1800));
   setStepState(chkPortal, '<span class="sp-chk-tick">✓</span>', true);
   setStepState(chkSession, '<span class="sp-spinner"></span>', false);
 
-  // 2. Step 2: Active portal login detected (~320ms)
-  await new Promise((r) => setTimeout(r, 340));
+  // 2. Step 2: Active portal login detected (~1.8s)
+  await new Promise((r) => setTimeout(r, 1800));
   setStepState(chkSession, '<span class="sp-chk-tick">✓</span>', true);
   setStepState(chkRegistry, '<span class="sp-spinner"></span>', false);
 
-  // 3. Step 3: Call backend POST /auth/verify-officer (~340ms)
+  // 3. Step 3: Call backend POST /auth/verify-officer (~1.6s)
   let verifyRes = null;
-  try {
-    const res = await fetch(`${API_BASE}/auth/verify-officer`, {
+  const [fetchResult] = await Promise.all([
+    fetch(`${API_BASE}/auth/verify-officer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -237,17 +237,18 @@ async function runAutomaticOfficerVerification(onVerifiedCallback) {
         designation: currentProf.title,
         office: currentProf.office,
       }),
-    });
-    verifyRes = await res.json();
-  } catch (err) {
-    console.warn('[NAKSHA] Backend verify error, fallback to synthetic logic:', err);
-    verifyRes = {
-      status: (officerId === 'EXT-999-HACK') ? 'denied' : 'verified',
-      reason: (officerId === 'EXT-999-HACK') ? 'কর্মকর্তার পরিচয় নিবন্ধনে পাওয়া যায়নি বা অননুমোদিত (Officer not found or unauthorized)' : null,
-      token: 'synthetic-jwt-session-token',
-      officer: currentProf,
-    };
-  }
+    }).then(r => r.json()).catch(err => {
+      console.warn('[NAKSHA] Backend verify error, fallback to synthetic logic:', err);
+      return {
+        status: (officerId === 'EXT-999-HACK') ? 'denied' : 'verified',
+        reason: (officerId === 'EXT-999-HACK') ? 'কর্মকর্তার পরিচয় নিবন্ধনে পাওয়া যায়নি বা অননুমোদিত (Officer not found or unauthorized)' : null,
+        token: 'synthetic-jwt-session-token',
+        officer: currentProf,
+      };
+    }),
+    new Promise((r) => setTimeout(r, 1600)),
+  ]);
+  verifyRes = fetchResult;
 
   if (verifyRes && verifyRes.status === 'verified') {
     setStepState(chkRegistry, '<span class="sp-chk-tick">✓</span>', true);
@@ -282,7 +283,7 @@ async function runAutomaticOfficerVerification(onVerifiedCallback) {
       roleChip.textContent = isEn ? (currentProf.enTitle || 'Land Officer') : currentProf.role;
     }
 
-    // Hold 600ms, then transition smoothly into Naksha panel
+    // Hold verified state for 1.5s so user clearly sees the success card (~6.7s total)
     setTimeout(() => {
       if (overlay) {
         overlay.classList.add('sp-hidden');
@@ -290,7 +291,7 @@ async function runAutomaticOfficerVerification(onVerifiedCallback) {
       if (typeof onVerifiedCallback === 'function') {
         onVerifiedCallback();
       }
-    }, 600);
+    }, 1500);
 
   } else {
     // Denial: stop on verification screen with red icon and one-line reason
