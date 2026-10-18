@@ -73,5 +73,8 @@ def test_sidepanel_html_contract():
     assert 'id="sp-detected-dag"' in html
     assert 'id="sp-detected-khatian"' in html
     assert 'id="sp-detected-mouza"' in html
+    # Trust Ledger Tab
+    assert 'id="tab-ledger"' in html
+    assert "Ed25519" in html
     # Synthetic notice
     assert "কৃত্রিম ডেমো ডেটা" in html

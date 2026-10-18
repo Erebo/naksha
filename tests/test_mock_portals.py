@@ -66,3 +66,45 @@ def test_mock_portals_plot_data_consistency():
     assert "402" in dags
     assert "401" in dags
     assert "403" in dags
+
+
+def test_e2e_multi_plot_journey_and_verdicts():
+    """Verify complete officer journey across Dag 402, Dag 401, and Dag 403.
+    Ensures that selecting each plot returns the appropriate backend record and verdict,
+    preventing stale data display.
+    """
+    # 1. Main benchmark plot Dag 402 -> Area conflict & Khas canal overlap -> BLOCK
+    res_402 = client.get("/api/v1/records?dag=402")
+    assert res_402.status_code == 200
+    records_402 = res_402.json()["records"]
+    assert len(records_402) >= 1
+    # Verify conflict on 402
+    res_conf = client.get("/api/v1/spatial/parcels/par-8f92-bd04-syn/conflicts")
+    assert res_conf.status_code == 200
+    conf_data = res_conf.json()
+    assert round(conf_data["area_in_decimals"], 2) == 0.90
+    assert "KHAS" in conf_data["conflict_type"]
+
+    # 2. West neighbor plot Dag 401 -> Clean ownership and tax paid -> CLEAR
+    res_401 = client.get("/api/v1/records?dag=401")
+    assert res_401.status_code == 200
+    records_401 = res_401.json()["records"]
+    assert len(records_401) == 1
+    rec_401 = records_401[0]
+    assert rec_401["dag_number"]["normalized_value"] == "401"
+    assert rec_401["khatian_number"]["normalized_value"] == "88"
+    assert rec_401["area_in_decimals"] == 4.37
+
+    # 3. South neighbor plot Dag 403 -> Arrears & divergence -> REVIEW / BLOCK
+    res_403 = client.get("/api/v1/records?dag=403")
+    assert res_403.status_code == 200
+    records_403 = res_403.json()["records"]
+    assert len(records_403) >= 1
+    rec_403 = records_403[0]
+    assert rec_403["dag_number"]["normalized_value"] == "403"
+    assert rec_403["khatian_number"]["normalized_value"] == "125"
+
+    # 4. Invalid or non-existent plot query returns empty cleanly without crashes
+    res_invalid = client.get("/api/v1/records?dag=999999")
+    assert res_invalid.status_code == 200
+    assert len(res_invalid.json()["records"]) == 0

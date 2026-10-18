@@ -166,6 +166,13 @@ Stage 5 delivers the zero-integration side panel experience for land officers:
 | `POST` | `/api/v1/spatial/calculate-area` | Computes deterministic area in UTM 46N (`EPSG:32646`) and returns decimals (শতক) and metric square meters. |
 | `POST` | `/api/v1/spatial/calculate-overlap` | Computes geometric intersection and overlap area between two GeoJSON polygons. |
 
+### Cryptographic Trust Ledger (Audit Trail)
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/records/{record_id}/verify` | Verifies a single record against cohort and appends an Ed25519-signed block to the ledger. |
+| `GET` | `/api/v1/ledger` | Retrieves the append-only SHA-256 hash-chain audit log with Ed25519 signatures. |
+| `GET` | `/api/v1/ledger/verify` | Cryptographically verifies the unbroken linkage and digital signatures of all blocks. |
+
 ---
 
 ## 📂 Repository Structure

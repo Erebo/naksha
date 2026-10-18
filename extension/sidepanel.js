@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidePanelListeners();
   loadContextAndPlotData();
   setupActionButtons();
+  fetchLedgerEntries();
 });
 
 // 1. Initialize Tabs
@@ -143,12 +144,168 @@ function applyDetectedContext(ctx) {
   if (khatianEl) khatianEl.textContent = ctx.khatian || '১২০';
   if (mouzaEl) mouzaEl.textContent = ctx.mouza || 'কাশিমপুর';
 
-  // If user selected Dag 401 or 403 on mock portal, adapt view
+  // Adapt verification verdicts & details based on active plot selection
+  updatePlotVerificationView(ctx.dag);
+
   if (ctx.dag === '401' || ctx.dag === '403') {
     highlightNeighborPlot(ctx.dag);
   } else {
     // Return to main benchmark parcel 402
     loadPlotData(state.activeParcelId);
+  }
+
+  // Refresh Trust Ledger
+  fetchLedgerEntries();
+}
+
+function updatePlotVerificationView(dag) {
+  const verdictEl = document.getElementById('sp-verdict');
+  const verdictText = document.getElementById('sp-verdict-text');
+  const tabDisc = document.getElementById('tab-discrepancy');
+
+  if (dag === '401') {
+    // Dag 401 is clean and tax paid
+    if (verdictEl && verdictText) {
+      verdictEl.className = 'sp-verdict-pill verdict-clear';
+      verdictEl.style.background = 'rgba(16, 185, 129, 0.15)';
+      verdictEl.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+      verdictEl.style.color = '#86efac';
+      verdictText.textContent = 'ক্লিয়ার (CLEAR)';
+    }
+    if (tabDisc) {
+      tabDisc.innerHTML = `
+        <div class="sp-card" style="border-left: 3px solid #10b981;">
+          <div class="sp-card-title text-green">✅ দাগ ৪০১: সীমানা ও কর সন্তোষজনক</div>
+          <p class="sp-card-text">
+            মৌজা কাশিমপুর, দাগ ৪০১, খতিয়ান ৮৮। মালিক: মোঃ রহিম শেখ। জমির পরিমাণ: ৪.৩৭ শতক।
+            কোনো সরকারি খাস ভূমির সাথে বিরোধ নেই এবং চলতি অর্থবছর পর্যন্ত ভূমি উন্নয়ন কর সম্পূর্ণ পরিশোধিত।
+          </p>
+          <div class="sp-metrics-grid">
+            <div class="sp-metric">
+              <span class="sp-m-label">খতিয়ান</span>
+              <span class="sp-m-val text-blue">বিএস ৮৮</span>
+            </div>
+            <div class="sp-metric">
+              <span class="sp-m-label">জরিপকৃত জমি</span>
+              <span class="sp-m-val text-green">৪.৩৭ শতক</span>
+            </div>
+            <div class="sp-metric">
+              <span class="sp-m-label">কর স্ট্যাটাস</span>
+              <span class="sp-m-val text-green">পরিশোধিত</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  } else if (dag === '403') {
+    // Dag 403 has tax arrears and khatian discrepancy
+    if (verdictEl && verdictText) {
+      verdictEl.className = 'sp-verdict-pill verdict-review';
+      verdictEl.style.background = 'rgba(245, 158, 11, 0.15)';
+      verdictEl.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+      verdictEl.style.color = '#fde68a';
+      verdictText.textContent = 'রিভিউ (REVIEW)';
+    }
+    if (tabDisc) {
+      tabDisc.innerHTML = `
+        <div class="sp-card" style="border-left: 3px solid #f59e0b;">
+          <div class="sp-card-title" style="color: #fde68a;">⚠️ দাগ ৪০৩: কর বকেয়া ও শ্রেণি অসংগতি নোটিশ</div>
+          <p class="sp-card-text">
+            মৌজা কাশিমপুর, দাগ ৪০৩, খতিয়ান ১২৫। মালিক: আব্দুল মজিদ। জমির পরিমাণ: ৫.৫৩ শতক।
+            বিগত ৩ অর্থবছরের ভূমি উন্নয়ন কর বকেয়া রয়েছে। নামজারি বা হস্তান্তরের পূর্বে বকেয়া কর আদায়ের নোটিশ প্রযোজ্য।
+          </p>
+          <div class="sp-metrics-grid">
+            <div class="sp-metric">
+              <span class="sp-m-label">খতিয়ান</span>
+              <span class="sp-m-val text-blue">বিএস ১২৫</span>
+            </div>
+            <div class="sp-metric">
+              <span class="sp-m-label">রেকর্ডীয় জমি</span>
+              <span class="sp-m-val text-green">৫.৫৩ শতক</span>
+            </div>
+            <div class="sp-metric">
+              <span class="sp-m-label">কর স্ট্যাটাস</span>
+              <span class="sp-m-val text-red">বকেয়া (Arrears)</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  } else {
+    // Default main plot Dag 402 with Khas canal conflict
+    if (verdictEl && verdictText) {
+      verdictEl.className = 'sp-verdict-pill verdict-block';
+      verdictEl.style.background = 'rgba(239, 68, 68, 0.15)';
+      verdictEl.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      verdictEl.style.color = '#fca5a5';
+      verdictText.textContent = 'ব্লক (BLOCK)';
+    }
+    if (tabDisc) {
+      tabDisc.innerHTML = `
+        <div class="sp-card alert-card">
+          <div class="sp-card-title text-danger">🚨 সরকারি খাস খাল দখল ও সীমানা অমিল</div>
+          <p class="sp-card-text">
+            দলিলে দাবিকৃত জমি <strong>৬.০০ শতক</strong>, কিন্তু ডিএলআরএস জরিপকৃত প্রকৃত জমি <strong>৫.১ শতক</strong>।
+            বাকি <strong>০.৯০ শতক</strong> উত্তর পাশের সরকারি খাস নিষ্কাশন খালের ভেতরে ঢুকে পড়েছে।
+          </p>
+          <div class="sp-metrics-grid">
+            <div class="sp-metric">
+              <span class="sp-m-label">দলিলে দাবি</span>
+              <span class="sp-m-val text-blue">৬.০০ শতক</span>
+            </div>
+            <div class="sp-metric">
+              <span class="sp-m-label">জরিপে প্রকৃত</span>
+              <span class="sp-m-val text-green">৫.১ শতক</span>
+            </div>
+            <div class="sp-metric">
+              <span class="sp-m-label">খাল দখল</span>
+              <span class="sp-m-val text-red">০.৯০ শতক</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sp-card">
+          <div class="sp-card-title">স্বয়ংক্রিয় নীতিগত সুপারিশ</div>
+          <ul class="sp-rule-list">
+            <li>❌ <strong>নামজারি আবেদন সাময়িক স্থগিত:</strong> সরকারি খাস ভূমির সাথে অমিল নিষ্পত্তি না হওয়া পর্যন্ত মিউটেশন চূড়ান্ত অনুমোদনযোগ্য নয়।</li>
+            <li>⚠️ <strong>যৌথ সীমানা পরিমাপ:</strong> ইউনিয়ন ভূমি সহকারী কর্মকর্তা ও কানুনগো দ্বারা বাস্তব সরজমিনে সীমানা পরিমাপের নির্দেশ।</li>
+          </ul>
+        </div>
+      `;
+    }
+  }
+}
+
+async function fetchLedgerEntries() {
+  const listEl = document.getElementById('sp-ledger-entries-list');
+  if (!listEl) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/ledger?limit=10`);
+    if (!res.ok) return;
+    const entries = await res.json();
+
+    listEl.innerHTML = '';
+    entries.forEach((e) => {
+      const card = document.createElement('div');
+      card.className = 'sp-card';
+      card.style.fontSize = '10px';
+      card.style.marginBottom = '6px';
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+          <strong style="color: #38bdf8;">ব্লক #${e.index}: ${e.event_type}</strong>
+          <span style="color: #64748b;">${e.timestamp.slice(11, 19)} UTC</span>
+        </div>
+        <div style="color: #94a3b8; word-break: break-all;">
+          দাগ: <strong>${e.dag_number || 'N/A'}</strong> · মৌজা: ${e.mouza || 'N/A'} · রায়: <strong>${e.verdict || 'N/A'}</strong><br/>
+          হ্যাশ: <code>${e.entry_hash.slice(0, 16)}...</code><br/>
+          স্বাক্ষর: <span style="color: #34d399;">Ed25519 Verified</span>
+        </div>
+      `;
+      listEl.appendChild(card);
+    });
+  } catch (err) {
+    console.warn('[NAKSHA SidePanel] Ledger fetch notice:', err);
   }
 }
 

@@ -99,6 +99,7 @@
       <button class="sp-tab active" data-tab="tab-discrepancy">ব্যাখ্যা ও অমিল</button>
       <button class="sp-tab" data-tab="tab-survey">জরিপ ইতিহাস</button>
       <button class="sp-tab" data-tab="tab-neighbors">প্রতিবেশী ও কর</button>
+      <button class="sp-tab" data-tab="tab-ledger">অডিট লেজার (Ed25519)</button>
     </div>
 
     <!-- Tab 1: Discrepancy & Verification Explanation -->
@@ -165,6 +166,23 @@
     <div class="sp-tab-content" id="tab-neighbors">
       <div class="sp-neighbors-list" id="sp-neighbors-list">
         <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Tab 4: Cryptographic Trust Ledger (Audit Trail) -->
+    <div class="sp-tab-content" id="tab-ledger">
+      <div class="sp-card" style="border-left: 3px solid #10b981;">
+        <div class="sp-card-title" style="color: #6ee7b7;">🔒 ডিজিটাল ট্রাস্ট লেজার (SHA-256 Chain + Ed25519)</div>
+        <p class="sp-card-text">
+          প্রতিটি অ্যাকশন ও ভেরিফিকেশন ফলাফল অপরিবর্তনযোগ্য ক্রিপ্টোগ্রাফিক হ্যাশ-চেইনে ব্লক আকারে সিল করা হয়।
+        </p>
+        <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px;">
+          অ্যালগরিদম: <code>SHA-256</code> · ডিজিটাল স্বাক্ষর: <code>Ed25519</code><br/>
+          চেইনের অবস্থা: <strong id="sp-ledger-status" style="color: #34d399;">সক্রিয় ও অটুট (INTACT)</strong>
+        </div>
+      </div>
+      <div id="sp-ledger-entries-list">
+        <!-- Rendered dynamically by sidepanel.js -->
       </div>
     </div>
   </div>

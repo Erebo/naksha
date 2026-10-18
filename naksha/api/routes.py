@@ -24,6 +24,7 @@ from naksha.data.synthetic_spatial import (
     get_synthetic_conflict_zone,
 )
 from naksha.services.verification import verify_record_against_cohort
+from naksha.services.ledger import audit_ledger, LedgerEntry
 from naksha.spatial.engine import (
     calculate_polygon_area,
     calculate_overlap,
@@ -209,6 +210,69 @@ def get_record_by_id(
             detail=f"Land record '{record_id}' not found.",
         )
     return record
+
+
+@router.get(
+    f"{settings.api_prefix}/records/{{record_id}}/verify",
+    response_model=VerificationResult,
+    summary="Verify Single Record Against Entire Repository Cohort",
+    tags=["Verification Engine"],
+)
+def verify_single_record(
+    record_id: str,
+    repo: BaseRecordRepository = Depends(get_repository),
+) -> VerificationResult:
+    """Performs deterministic cross-agency verification of a target record against the cohort,
+    sealing the finding into the Ed25519-signed SHA-256 Trust Ledger.
+    """
+    record = repo.get_by_id(record_id)
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Land record '{record_id}' not found.",
+        )
+    cohort = repo.list_records(limit=100)
+    result = verify_record_against_cohort(primary=record, cohort=cohort)
+
+    # Record into cryptographic Trust Ledger
+    audit_ledger.record_verification(
+        event_type="VERIFICATION_VERDICT",
+        canonical_parcel_id=result.canonical_parcel_id,
+        dag_number=record.dag_number.normalized_value if record.dag_number else None,
+        mouza=record.mouza.normalized_value if record.mouza else None,
+        verdict=result.verdict.value,
+        cited_records=result.compared_record_ids,
+        officer_id="UL-2024-KSH",
+    )
+    return result
+
+
+@router.get(
+    f"{settings.api_prefix}/ledger",
+    response_model=List[LedgerEntry],
+    summary="Get Append-Only Cryptographic Trust Ledger Entries",
+    tags=["Trust Ledger"],
+)
+def get_ledger_entries(limit: int = Query(default=20, ge=1, le=100)) -> List[LedgerEntry]:
+    """Retrieves recent signed audit entries from the append-only SHA-256 hash-chain."""
+    return audit_ledger.get_entries(limit=limit)
+
+
+@router.get(
+    f"{settings.api_prefix}/ledger/verify",
+    summary="Verify Cryptographic Integrity of Trust Ledger Chain",
+    tags=["Trust Ledger"],
+)
+def verify_ledger_chain() -> Dict[str, Any]:
+    """Verifies that all blocks in the ledger hash chain are intact and signed by Ed25519."""
+    is_valid, reason = audit_ledger.verify_integrity()
+    return {
+        "is_valid": is_valid,
+        "total_blocks": len(audit_ledger._chain),
+        "latest_block_hash": audit_ledger.latest_entry.entry_hash,
+        "reason": reason,
+        "algorithm": "SHA-256 Hash Chain + Ed25519 Digital Signatures",
+    }
 
 
 # ==============================================================================

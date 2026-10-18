@@ -286,4 +286,50 @@ def generate_synthetic_records() -> List[LandRecord]:
     )
     records.append(rec_incomplete)
 
+    # 6. West Neighbor Record: BS Dag 401 (Paid Tax, Clean Ownership)
+    rec_401 = _create_record(
+        record_id="SYN-401-TAX-01",
+        agency=AgencyType.UNION_LAND_OFFICE,
+        doc_type="LD Tax Dakhila (দাখিলা)",
+        source_ref_id="TAX-2024-KSH-401",
+        mouza="Kashimpur",
+        upazila="Gazipur Sadar",
+        district="Gazipur",
+        jl_no="28",
+        survey_era=SurveyEra.BS,
+        raw_dag="401",
+        raw_khatian="88",
+        raw_owner="মোঃ রহিম শেখ (Md. Rahim Sheikh)",
+        raw_area=4.37,
+        area_unit=LandAreaUnit.DECIMAL,
+        land_class=LandClass.NAL,
+        canonical_parcel_id="par-401-west-syn",
+        holding_no="H-401",
+        notes="West neighbor plot BS 401; tax paid and in order.",
+    )
+    records.append(rec_401)
+
+    # 7. South Neighbor Record: BS Dag 403 (Arrears & Payer Mismatch Hazard)
+    rec_403 = _create_record(
+        record_id="SYN-403-TAX-01",
+        agency=AgencyType.UNION_LAND_OFFICE,
+        doc_type="LD Tax Assessment (কর দাবি নোটিশ)",
+        source_ref_id="TAX-2024-KSH-403",
+        mouza="Kashimpur",
+        upazila="Gazipur Sadar",
+        district="Gazipur",
+        jl_no="28",
+        survey_era=SurveyEra.BS,
+        raw_dag="403",
+        raw_khatian="125",
+        raw_owner="আব্দুল মজিদ (Abdul Majid)",
+        raw_area=5.53,
+        area_unit=LandAreaUnit.DECIMAL,
+        land_class=LandClass.NAL,
+        canonical_parcel_id="par-403-south-syn",
+        holding_no="H-403",
+        notes="South neighbor plot BS 403; land development tax in arrears for 3 fiscal years.",
+    )
+    records.append(rec_403)
+
     return records
