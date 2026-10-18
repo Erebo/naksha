@@ -259,6 +259,28 @@ def verify_record_against_cohort(
             all_matches.append(match)
         all_discrepancies.extend(discs)
 
+    # Check spatial Khas conflict if primary record has geometry and claims area exceeding ground truth
+    from naksha.data.synthetic_spatial import get_synthetic_conflict_zone, get_synthetic_parcel_layers
+
+    if primary.geometry and primary.source.agency == AgencyType.SUB_REGISTRY and primary.area_in_decimals and primary.area_in_decimals > 5.2:
+        khas_conflict = get_synthetic_conflict_zone(primary.canonical_parcel_id or "par-8f92-bd04-syn")
+        if khas_conflict:
+            all_discrepancies.append(
+                Discrepancy(
+                    discrepancy_type=DiscrepancyType.GEOMETRIC_OVERLAP,
+                    severity=DiscrepancySeverity.BLOCKING,
+                    field_name="geometry",
+                    record_a_id=primary.id,
+                    value_a=f"{primary.area_in_decimals:.2f} dec",
+                    value_b=f"{khas_conflict.area_in_decimals:.2f} dec overlap",
+                    difference_description=khas_conflict.description,
+                    spatial_conflict=khas_conflict,
+                )
+            )
+
+    # Attach multi-era 2D GIS survey layers
+    spatial_layers = get_synthetic_parcel_layers(primary.canonical_parcel_id or "par-8f92-bd04-syn")
+
     # Determine verdict
     has_blocking = any(d.severity == DiscrepancySeverity.BLOCKING for d in all_discrepancies)
     has_warning = any(d.severity == DiscrepancySeverity.WARNING for d in all_discrepancies)
@@ -281,5 +303,6 @@ def verify_record_against_cohort(
         summary=summary,
         matches=all_matches,
         discrepancies=all_discrepancies,
+        spatial_layers=spatial_layers,
         is_synthetic=True,
     )

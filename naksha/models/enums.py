@@ -64,6 +64,7 @@ class DiscrepancyType(str, Enum):
     UNMUTATED_DEED = "UNMUTATED_DEED"
     INCOMPLETE_RECORD = "INCOMPLETE_RECORD"
     DUPLICATE_RECORD = "DUPLICATE_RECORD"
+    GEOMETRIC_OVERLAP = "GEOMETRIC_OVERLAP"
 
 
 class DiscrepancySeverity(str, Enum):
@@ -71,3 +72,21 @@ class DiscrepancySeverity(str, Enum):
     INFO = "INFO"
     WARNING = "WARNING"
     BLOCKING = "BLOCKING"
+
+
+class SpatialLayerType(str, Enum):
+    """The core spatial visual layers in the Naksha 2D GIS map."""
+    ANCESTRAL_FOOTPRINT = "ancestral_footprint"  # CS/SA historical boundary
+    DEED_CLAIM = "deed_claim"                    # Paper deed boundary claim
+    GROUND_TRUTH = "ground_truth"                # DLRS surveyed polygon (BS)
+    CONFLICT_ZONE = "conflict_zone"              # Computed spatial overlap / dispute area
+    RESTRICTED_KHAS = "restricted_khas"          # Government Khas canal / waterbody / road
+    NEIGHBOR_PARCEL = "neighbor_parcel"          # Surrounding plots for tax context
+
+
+class TaxPaymentStatus(str, Enum):
+    """LD Tax payment status for parcels and surrounding neighbors."""
+    PAID = "paid"                      # পরিশোধিত
+    ARREARS = "arrears"                # বকেয়া
+    PAYER_MISMATCH = "payer_mismatch"  # অপরিশোধিত / মালিক ব্যতীত অন্য ব্যক্তি প্রদত্ত
+    EXEMPT = "exempt"                  # মওকুফ

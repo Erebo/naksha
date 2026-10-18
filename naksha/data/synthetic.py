@@ -8,10 +8,12 @@ NO REAL CITIZEN NAMES, REAL NIDS, OR ACTUAL GOVERNMENT RECORD NUMBERS ARE INCLUD
 from datetime import datetime, timezone
 from typing import List
 
-from naksha.models.canonical import ExtractedField, LandRecord, SourceReference
+from naksha.models.canonical import ExtractedField, GeoJSONGeometry, LandRecord, SourceReference
 from naksha.models.enums import AgencyType, LandAreaUnit, LandClass, SurveyEra
 from naksha.normalization.area import standardize_area
 from naksha.normalization.text import normalize_identifier, normalize_text, strip_bangla_honorifics
+from naksha.spatial.engine import calculate_polygon_area
+from naksha.data.synthetic_spatial import DEED_CLAIM_402_COORDS, DLRS_BS_402_COORDS
 
 
 def _create_record(
@@ -32,6 +34,8 @@ def _create_record(
     land_class: LandClass | None,
     canonical_parcel_id: str | None = None,
     holding_no: str | None = None,
+    geometry: GeoJSONGeometry | None = None,
+    survey_layer_ref: str | None = None,
     is_encumbered: bool = False,
     encumbrance_details: str | None = None,
     owner_confidence: float = 1.0,
@@ -56,6 +60,11 @@ def _create_record(
     area_dec, area_sqm = None, None
     if raw_area is not None and area_unit is not None:
         area_dec, area_sqm = standardize_area(raw_area, area_unit)
+
+    # Compute deterministic polygon area if geometry is attached
+    calc_poly_dec, calc_poly_sqm = None, None
+    if geometry is not None:
+        calc_poly_dec, calc_poly_sqm = calculate_polygon_area(geometry)
 
     return LandRecord(
         id=record_id,
@@ -115,6 +124,10 @@ def _create_record(
         area_in_decimals=area_dec,
         area_in_sq_meters=area_sqm,
         land_class=land_class,
+        geometry=geometry,
+        survey_layer_reference=survey_layer_ref,
+        calculated_polygon_area_decimals=calc_poly_dec,
+        calculated_polygon_area_sqm=calc_poly_sqm,
         is_encumbered=is_encumbered,
         encumbrance_details=encumbrance_details,
         is_synthetic=True,
@@ -153,6 +166,8 @@ def generate_synthetic_records() -> List[LandRecord]:
         area_unit=LandAreaUnit.DECIMAL,
         land_class=LandClass.NAL,
         canonical_parcel_id="par-8f92-bd04-syn",
+        geometry=GeoJSONGeometry(type="Polygon", coordinates=DEED_CLAIM_402_COORDS),
+        survey_layer_ref="DEED-CLAIM-BS402",
         notes="Clean registered sale deed.",
     )
     records.append(rec_match_a)
@@ -175,6 +190,8 @@ def generate_synthetic_records() -> List[LandRecord]:
         area_unit=LandAreaUnit.DECIMAL,
         land_class=LandClass.NAL,
         canonical_parcel_id="par-8f92-bd04-syn",
+        geometry=GeoJSONGeometry(type="Polygon", coordinates=DLRS_BS_402_COORDS),
+        survey_layer_ref="DLRS-SURVEY-BS402",
         notes="Mutated khatian matching Deed DEED-2024-DH-402.",
     )
     records.append(rec_match_b)
@@ -219,6 +236,8 @@ def generate_synthetic_records() -> List[LandRecord]:
         area_unit=LandAreaUnit.DECIMAL,
         land_class=LandClass.NAL,
         canonical_parcel_id="par-8f92-bd04-syn",
+        geometry=GeoJSONGeometry(type="Polygon", coordinates=DLRS_BS_402_COORDS),
+        survey_layer_ref="DLRS-SURVEY-BS402",
         notes="DLRS ground-truth survey polygon is 5.10 decimals; deed claims 6.00 decimals.",
     )
     records.append(rec_conflict_area)

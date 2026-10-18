@@ -1,10 +1,10 @@
 """Canonical Land Data Model for NAKSHA (Pydantic v2).
 
-Defines the normalized data structures used across all agency adapters and
-reconciliation engines.
+Defines the normalized data structures used across all agency adapters,
+reconciliation engines, and spatial GIS layers.
 """
 from datetime import datetime, timezone
-from typing import Generic, Optional, TypeVar, Any
+from typing import Generic, Optional, TypeVar, Any, List, Dict
 from pydantic import BaseModel, Field, ConfigDict
 
 from naksha.models.enums import (
@@ -15,6 +15,8 @@ from naksha.models.enums import (
     VerificationVerdict,
     DiscrepancyType,
     DiscrepancySeverity,
+    SpatialLayerType,
+    TaxPaymentStatus,
 )
 
 T = TypeVar("T")
@@ -74,6 +76,73 @@ class SourceReference(BaseModel):
         default=None,
         description="Additional contextual notes from the source archive.",
     )
+
+
+class GeoJSONGeometry(BaseModel):
+    """Standard RFC 7946 GeoJSON Geometry object in WGS 84 (EPSG:4326)."""
+    type: str = Field(
+        default="Polygon",
+        description="Geometry type: Polygon or MultiPolygon.",
+    )
+    coordinates: List[Any] = Field(
+        description="Coordinate list representing rings [longitude, latitude].",
+    )
+
+
+class GeoJSONFeature(BaseModel):
+    """Standard RFC 7946 GeoJSON Feature object."""
+    type: str = "Feature"
+    id: Optional[str] = None
+    geometry: Optional[GeoJSONGeometry] = None
+    properties: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GeoJSONFeatureCollection(BaseModel):
+    """Standard RFC 7946 GeoJSON FeatureCollection."""
+    type: str = "FeatureCollection"
+    features: List[GeoJSONFeature] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SpatialConflictZone(BaseModel):
+    """Describes a computed geometric dispute/overlap zone."""
+    conflict_type: str = Field(
+        description="Type of conflict: KHAS_OVERLAP, NEIGHBOR_OVERLAP, or BOUNDARY_DISPUTE.",
+    )
+    area_in_decimals: float = Field(
+        description="Area of conflict in standard decimals.",
+    )
+    area_in_sq_meters: float = Field(
+        description="Area of conflict in metric square meters.",
+    )
+    geometry: Optional[GeoJSONGeometry] = Field(
+        default=None,
+        description="Geometry polygon of the overlap/conflict zone in EPSG:4326.",
+    )
+    description: str = Field(
+        description="Explainable description of the conflict.",
+    )
+
+
+class SurveyLayerSnapshot(BaseModel):
+    """Visual layer payload for the 4-layer 2D GIS map view."""
+    layer_type: SpatialLayerType = Field(
+        description="Category of the spatial layer.",
+    )
+    layer_name: str = Field(
+        description="Descriptive layer name in English/Bangla.",
+    )
+    survey_era: Optional[SurveyEra] = Field(
+        default=None,
+        description="Survey era (CS, SA, RS, BS) if applicable.",
+    )
+    geometry: Optional[GeoJSONGeometry] = Field(
+        default=None,
+        description="WGS 84 GeoJSON geometry.",
+    )
+    properties: Dict[str, Any] = Field(default_factory=dict)
+    is_synthetic: bool = True
+    synthetic_disclaimer: str = "SYNTHETIC BENCHMARK GEOMETRY: NOT AN OFFICIAL GOVERNMENT CADASTRAL BOUNDARY"
 
 
 class LandRecord(BaseModel):
@@ -165,6 +234,24 @@ class LandRecord(BaseModel):
         description="Revenue land classification (e.g. Nal, Viti, Pukur, Khas).",
     )
 
+    # Spatial Geometry & Survey Cadastral Extensions
+    geometry: Optional[GeoJSONGeometry] = Field(
+        default=None,
+        description="WGS 84 (EPSG:4326) geometry of the parcel boundary.",
+    )
+    survey_layer_reference: Optional[str] = Field(
+        default=None,
+        description="Cadastral sheet identifier or spatial layer reference code.",
+    )
+    calculated_polygon_area_decimals: Optional[float] = Field(
+        default=None,
+        description="Area calculated deterministically from polygon coordinates in UTM 46N in decimals.",
+    )
+    calculated_polygon_area_sqm: Optional[float] = Field(
+        default=None,
+        description="Area calculated deterministically from polygon coordinates in metric square meters.",
+    )
+
     # Encumbrances & Locks
     is_encumbered: bool = Field(
         default=False,
@@ -248,6 +335,10 @@ class Discrepancy(BaseModel):
     difference_description: str = Field(
         description="Explicit, explainable statement describing the difference.",
     )
+    spatial_conflict: Optional[SpatialConflictZone] = Field(
+        default=None,
+        description="Attached spatial conflict geometry if discrepancy is geometric.",
+    )
 
 
 class VerificationResult(BaseModel):
@@ -276,6 +367,10 @@ class VerificationResult(BaseModel):
     discrepancies: list[Discrepancy] = Field(
         default_factory=list,
         description="List of all detected discrepancies or anomalies.",
+    )
+    spatial_layers: Optional[List[SurveyLayerSnapshot]] = Field(
+        default=None,
+        description="Attached visual layers for the 2D GIS side panel map.",
     )
     is_synthetic: bool = Field(
         default=True,

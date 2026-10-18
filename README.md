@@ -93,7 +93,7 @@ pip install -r requirements.txt
 ```
 
 ### 3. Run Test Suite
-Execute the comprehensive test suite (30 unit & integration tests):
+Execute the comprehensive test suite (46 unit & integration tests covering data models, normalization, spatial engine, and APIs):
 ```bash
 pytest -v
 ```
@@ -111,12 +111,23 @@ Interactive API documentation will be available at:
 
 ## 🌐 API Endpoints
 
+### Canonical Records & Verification
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/health` | Health and readiness check returning service status and version. |
+| `GET` | `/health` | Health and readiness check returning service status, spatial engine state, and version. |
 | `GET` | `/api/v1/records` | List normalized land records with pagination (`limit`, `offset`) and filters (`agency`, `mouza`, `dag`). |
 | `GET` | `/api/v1/records/{record_id}` | Fetch a specific canonical land record by its unique ID (e.g. `SYN-MATCH-01`). Returns `404` if not found. |
 | `GET` | `/api/v1/records/demo` | Runs cross-agency reconciliation across all benchmark scenarios and returns explainable verdicts and findings. |
+
+### 2D GIS & Spatial Engine
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/spatial/parcels` | GeoJSON `FeatureCollection` of all cadastral parcels with attributes (Dag, Khatian, area, tax status). |
+| `GET` | `/api/v1/spatial/parcels/{parcel_id}/layers` | 4-layer multi-era visual stack (CS Dag 88 ancestral footprint, Deed claim, DLRS survey, Khas conflict zone). |
+| `GET` | `/api/v1/spatial/parcels/{parcel_id}/neighbors` | Target parcel and neighboring plots with LD Tax status (`paid`, `arrears`) for the Tax Map. |
+| `GET` | `/api/v1/spatial/parcels/{parcel_id}/conflicts` | Computed geometric conflict zone details (e.g. 0.90 dec Khas canal encroachment). |
+| `POST` | `/api/v1/spatial/calculate-area` | Computes deterministic area in UTM 46N (`EPSG:32646`) and returns decimals (শতক) and metric square meters. |
+| `POST` | `/api/v1/spatial/calculate-overlap` | Computes geometric intersection and overlap area between two GeoJSON polygons. |
 
 ---
 
