@@ -34,32 +34,89 @@ Because these keys never meet at the moment of an official action, fraud and dis
 
 ---
 
-## 🏛️ System Architecture
+## 🚀 Stage 2: Canonical Land Data Model & Backend Baseline
 
-NAKSHA operates across five modular layers:
-
-- **Layer 1: Agency Adapter Mesh**: Async, read-only connectors for Sub-Registry, AC Land, LD Tax, and DLRS (REST, CDC, batch).
-- **Layer 2: Identity & Lineage Engine**: Canonical UUIDv7 mapping, CS→SA→RS→BS genealogical DAG, salted HMAC for NID privacy, and Bangla phonetic name matching.
-- **Layer 3: Spatial Integrity Engine (PostGIS 3.4)**: Metric calculations in UTM 46N (`EPSG:32646`), polygon validation, conflict zone calculation (Khas canal/wetland overlaps, ±0.2 dec area tolerances).
-- **Layer 4: Deterministic Rule Engine**: Statutory validation logic returning explainable verdicts with cited legal/record evidence:
-  - `RULE_UNMUTATED_DEED`: Detects unmutated deeds registered >30 days ago (double-selling hazard).
-  - `RULE_TAX_OWNER_MISMATCH`: Flags tax payments tendered by non-owners.
-  - `RULE_CLASS_CONFLICT`: Detects discrepancy between khatian class (e.g. *Nal*) and tax assessment (e.g. *Viti*).
-  - `RULE_ACQUISITION_OR_MORTGAGE_LOCK`: Blocks transfers with active bank liens or DC acquisition notices.
-  - `RULE_GEOMETRIC_OVERLAP`: Flags Khas/boundary encroachments or paper area inflation.
-- **Layer 5: Trust Ledger**: Cryptographically sealed audit log with hash chains and daily Merkle root generation.
+Stage 2 establishes the normalized core data architecture and verification services:
+* **Canonical Schema (`naksha.models.canonical`)**: Pydantic v2 schemas for `LandRecord`, `SourceReference`, `ExtractedField`, `RecordMatch`, `Discrepancy`, and `VerificationResult`.
+* **Field Provenance**: `ExtractedField[T]` preserves the verbatim `raw_value`, normalized comparison value `normalized_value`, extraction `confidence` (0.0–1.0), and `source_citation`.
+* **Normalization Engine (`naksha.normalization`)**:
+  * Unicode NFC normalization, zero-width character stripping, and whitespace standardisation.
+  * Bidirectional Bengali (০–৯) and ASCII (0–9) numeral conversion.
+  * Dag, Khatian, and Holding identifier normalization with sub-plot preservation (`402/ka`).
+  * Statutory land area conversions across Decimals (শতক), Acres (একর), Bighas (বিঘা), Kathas (কাঠা), Chhataks (ছটাক), Square Feet, and Square Meters.
+  * Cross-lingual phonetic name similarity scoring across Bangla script and English transliterations with honorific stripping (`মোঃ`, `Md.`).
+* **Repository Layer (`naksha.repository`)**: Abstract `BaseRecordRepository` and `InMemoryRecordRepository` enabling database decoupling.
+* **Verification Engine (`naksha.services.verification`)**: Cross-references records to detect Dag conflicts, Khatian divergences, area deficits (>0.2 dec statutory tolerance), land-class inconsistencies, duplicate concurrent transfers, and unverified incomplete records.
+* **REST API (`naksha.api`)**: FastAPI backend with OpenAPI documentation, query filtering, and demo reconciliation endpoints.
 
 ---
 
 ## 🧪 Synthetic Demonstration Federation
 
-In adherence to data privacy standards and hackathon requirements, NAKSHA uses **no real citizen PII, live government databases, or actual land records**.
+> [!IMPORTANT]
+> **Data Privacy Guarantee:** In strict adherence to data privacy standards and hackathon requirements, NAKSHA uses **NO REAL CITIZEN NAMES, REAL NIDS, PHONE NUMBERS, OR ACTUAL PRIVATE LAND RECORDS**.
+> Every record is generated deterministically by `naksha.data.synthetic` and marked with `is_synthetic: true` and a prominent audit disclaimer.
 
-All demonstrations operate against a deterministic synthetic data generator (`seed_synthetic.py`) covering four benchmark scenarios:
-1. **CLEAR** — Clean parcel with continuous CS→BS lineage, synchronized mutation and tax, matching 6.0 dec polygon.
-2. **BLOCK** — Unmutated double-sale hazard (prior deed registered 124 days ago with no mutation).
-3. **REVIEW** — Adverse possession attempt (LD Tax paid by unrelated individual; Nal vs. Viti class discrepancy).
-4. **BLOCK** — Spatial encroachment (6.0 dec deed claim vs. 5.1 dec polygon crossing a public Khas canal strip).
+The Stage 2 benchmark cohort includes:
+1. **Matching Pair (`SYN-MATCH-01` & `SYN-MATCH-02`)**: Sub-Registry sale deed and AC Land e-mutation agreeing on Mouza Kashimpur, Dag 402, Khatian 120, 6.00 decimals, and owner Md. Abdul Karim (`CLEAR`).
+2. **Conflicting Identifiers (`SYN-CONFLICT-ID-01`)**: LD Tax dakhila receipt asserting Dag 403 and Khatian 125 with land-class conflict (`BLOCK`).
+3. **Conflicting Area (`SYN-CONFLICT-AREA-01`)**: DLRS ground-truth cadastral survey of 5.10 decimals vs. 6.00 decimals deed claim (0.90 dec deficit exceeding ±0.20 dec statutory limit) (`BLOCK`).
+4. **Duplicate Transfer Hazard (`SYN-DUPLICATE-01`)**: Second registered deed entered for the same plot within 14 days to another buyer (`BLOCK`).
+5. **Incomplete Historical Fragment (`SYN-INCOMPLETE-01`)**: Damaged historical CS record missing plot and khatian identifiers with low extraction confidence (`REVIEW`).
+
+---
+
+## 🛠️ Setup & Installation
+
+### Prerequisites
+* Python 3.11+
+* Git
+
+### 1. Clone & Setup Environment
+```bash
+# Clone the repository (if not already local)
+git clone https://github.com/Erebo/naksha.git
+cd naksha
+
+# Create and activate virtual environment
+python -m venv venv
+
+# Windows (PowerShell):
+.\venv\Scripts\Activate.ps1
+# Linux / macOS:
+source venv/bin/activate
+```
+
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run Test Suite
+Execute the comprehensive test suite (30 unit & integration tests):
+```bash
+pytest -v
+```
+
+### 4. Start Backend Server
+Launch the FastAPI development server:
+```bash
+uvicorn naksha.api.app:app --reload --host 127.0.0.1 --port 8000
+```
+Interactive API documentation will be available at:
+* Swagger UI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+* ReDoc: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+
+---
+
+## 🌐 API Endpoints
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/health` | Health and readiness check returning service status and version. |
+| `GET` | `/api/v1/records` | List normalized land records with pagination (`limit`, `offset`) and filters (`agency`, `mouza`, `dag`). |
+| `GET` | `/api/v1/records/{record_id}` | Fetch a specific canonical land record by its unique ID (e.g. `SYN-MATCH-01`). Returns `404` if not found. |
+| `GET` | `/api/v1/records/demo` | Runs cross-agency reconciliation across all benchmark scenarios and returns explainable verdicts and findings. |
 
 ---
 
@@ -67,13 +124,48 @@ All demonstrations operate against a deterministic synthetic data generator (`se
 
 ```text
 naksha/
-├── .gitignore              # Ignores Python, Node, caches, secrets, and local databases
-├── .env.example            # Environment configuration template
-├── LICENSE                 # MIT License
-├── README.md               # Project overview and specifications
-└── docs/
-    ├── Naksha_Concept_Note.pdf   # Hackathon concept note
-    └── ROADMAP.md                # Multi-phase implementation roadmap
+├── .env.example              # Environment configuration template
+├── .gitignore                # Python, Node, database, cache, and secret exclusions
+├── LICENSE                   # MIT License
+├── README.md                 # Complete project documentation
+├── requirements.txt          # Minimal dependency specifications
+├── docs/
+│   ├── Naksha_Concept_Note.pdf   # Hackathon concept note
+│   └── ROADMAP.md                # Multi-phase implementation roadmap
+├── naksha/
+│   ├── __init__.py
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── app.py            # FastAPI application factory and CORS configuration
+│   │   └── routes.py         # Route handlers for health, records, and demo reconciliation
+│   ├── core/
+│   │   ├── __init__.py
+│   │   └── config.py         # Application settings
+│   ├── data/
+│   │   ├── __init__.py
+│   │   └── synthetic.py      # Clearly marked synthetic benchmark records
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── canonical.py      # Pydantic models: LandRecord, ExtractedField, Discrepancy, etc.
+│   │   └── enums.py          # Enums: AgencyType, LandAreaUnit, SurveyEra, LandClass, Verdicts
+│   ├── normalization/
+│   │   ├── __init__.py
+│   │   ├── area.py           # Explicit unit conversion rules (Decimal, Acre, Bigha, Katha, Sqm)
+│   │   └── text.py           # Text cleaning, Bangla numerals, identifier & phonetic matching
+│   ├── repository/
+│   │   ├── __init__.py
+│   │   ├── base.py           # Abstract BaseRecordRepository interface
+│   │   └── memory.py         # In-memory repository with filtering and pagination
+│   └── services/
+│       ├── __init__.py
+│       └── verification.py   # Record comparison, completeness check, and discrepancy detection
+└── tests/
+    ├── __init__.py
+    ├── test_api.py           # API endpoint integration tests (status codes, filters, 404s)
+    ├── test_models.py        # Pydantic schema validation, optional fields, JSON serialization
+    ├── test_normalization.py # Bangla/English digits, area conversion, phonetic similarity
+    ├── test_repository.py    # Repository interface, CRUD, and filter tests
+    └── test_synthetic_data.py# Benchmark dataset safety, matching pairs, and conflict tests
 ```
 
 ---

@@ -1,0 +1,285 @@
+"""Verification and Discrepancy Detection Service for NAKSHA."""
+from typing import List, Optional
+from naksha.models.canonical import (
+    Discrepancy,
+    LandRecord,
+    RecordMatch,
+    VerificationResult,
+)
+from naksha.models.enums import (
+    AgencyType,
+    DiscrepancySeverity,
+    DiscrepancyType,
+    VerificationVerdict,
+)
+from naksha.normalization.text import strip_bangla_honorifics, phonetic_name_similarity
+
+AREA_TOLERANCE_DECIMALS = 0.20  # Statutory area discrepancy threshold
+
+
+def evaluate_record_completeness(record: LandRecord) -> List[Discrepancy]:
+    """Checks whether a record has essential identifiers and sufficient extraction confidence."""
+    discrepancies: List[Discrepancy] = []
+
+    if record.dag_number is None or record.dag_number.normalized_value is None:
+        discrepancies.append(
+            Discrepancy(
+                discrepancy_type=DiscrepancyType.INCOMPLETE_RECORD,
+                severity=DiscrepancySeverity.WARNING,
+                field_name="dag_number",
+                record_a_id=record.id,
+                difference_description="Dag (plot) number is missing or unreadable in source record.",
+            )
+        )
+    elif record.dag_number.confidence < 0.5:
+        discrepancies.append(
+            Discrepancy(
+                discrepancy_type=DiscrepancyType.INCOMPLETE_RECORD,
+                severity=DiscrepancySeverity.WARNING,
+                field_name="dag_number",
+                record_a_id=record.id,
+                value_a=record.dag_number.raw_value,
+                difference_description=f"Low extraction confidence ({record.dag_number.confidence:.2f}) on dag number.",
+            )
+        )
+
+    if record.khatian_number is None or record.khatian_number.normalized_value is None:
+        discrepancies.append(
+            Discrepancy(
+                discrepancy_type=DiscrepancyType.INCOMPLETE_RECORD,
+                severity=DiscrepancySeverity.WARNING,
+                field_name="khatian_number",
+                record_a_id=record.id,
+                difference_description="Khatian (Record-of-Rights) number is missing or damaged in source record.",
+            )
+        )
+
+    if record.owner_name is not None and record.owner_name.confidence < 0.5:
+        discrepancies.append(
+            Discrepancy(
+                discrepancy_type=DiscrepancyType.INCOMPLETE_RECORD,
+                severity=DiscrepancySeverity.WARNING,
+                field_name="owner_name",
+                record_a_id=record.id,
+                value_a=record.owner_name.raw_value,
+                difference_description=f"Low extraction confidence ({record.owner_name.confidence:.2f}) on owner name.",
+            )
+        )
+
+    return discrepancies
+
+
+def compare_records(primary: LandRecord, secondary: LandRecord) -> tuple[Optional[RecordMatch], List[Discrepancy]]:
+    """Compares two normalized LandRecords, detecting matches and discrepancies."""
+    discrepancies: List[Discrepancy] = []
+    matched_fields: List[str] = []
+
+    # 1. Compare Mouza
+    mouza_match = False
+    if (
+        primary.mouza and primary.mouza.normalized_value and
+        secondary.mouza and secondary.mouza.normalized_value
+    ):
+        if primary.mouza.normalized_value.lower() == secondary.mouza.normalized_value.lower():
+            matched_fields.append("mouza")
+            mouza_match = True
+
+    # 2. Compare Dag
+    dag_a = primary.dag_number.normalized_value if primary.dag_number else None
+    dag_b = secondary.dag_number.normalized_value if secondary.dag_number else None
+
+    if dag_a and dag_b:
+        if dag_a == dag_b:
+            matched_fields.append("dag_number")
+        else:
+            discrepancies.append(
+                Discrepancy(
+                    discrepancy_type=DiscrepancyType.DAG_MISMATCH,
+                    severity=DiscrepancySeverity.BLOCKING,
+                    field_name="dag_number",
+                    record_a_id=primary.id,
+                    record_b_id=secondary.id,
+                    value_a=dag_a,
+                    value_b=dag_b,
+                    difference_description=f"Dag conflict: Record {primary.id} specifies dag '{dag_a}', but Record {secondary.id} specifies dag '{dag_b}'.",
+                )
+            )
+
+    # 3. Compare Khatian
+    khat_a = primary.khatian_number.normalized_value if primary.khatian_number else None
+    khat_b = secondary.khatian_number.normalized_value if secondary.khatian_number else None
+
+    if khat_a and khat_b:
+        if khat_a == khat_b:
+            matched_fields.append("khatian_number")
+        else:
+            discrepancies.append(
+                Discrepancy(
+                    discrepancy_type=DiscrepancyType.KHATIAN_MISMATCH,
+                    severity=DiscrepancySeverity.WARNING,
+                    field_name="khatian_number",
+                    record_a_id=primary.id,
+                    record_b_id=secondary.id,
+                    value_a=khat_a,
+                    value_b=khat_b,
+                    difference_description=f"Khatian discrepancy: '{khat_a}' in {primary.id} vs '{khat_b}' in {secondary.id}.",
+                )
+            )
+
+    # 4. Compare Recorded Area
+    area_a = primary.area_in_decimals
+    area_b = secondary.area_in_decimals
+
+    if area_a is not None and area_b is not None:
+        diff = abs(area_a - area_b)
+        if diff <= 0.01:
+            matched_fields.append("area_in_decimals")
+        elif diff > AREA_TOLERANCE_DECIMALS:
+            # Paper area exceeding ground truth is blocking
+            severity = DiscrepancySeverity.BLOCKING if (
+                (primary.source.agency == AgencyType.SUB_REGISTRY and secondary.source.agency == AgencyType.DLRS and area_a > area_b)
+                or (primary.source.agency == AgencyType.DLRS and secondary.source.agency == AgencyType.SUB_REGISTRY and area_b > area_a)
+            ) else DiscrepancySeverity.WARNING
+
+            discrepancies.append(
+                Discrepancy(
+                    discrepancy_type=DiscrepancyType.AREA_MISMATCH,
+                    severity=severity,
+                    field_name="area_in_decimals",
+                    record_a_id=primary.id,
+                    record_b_id=secondary.id,
+                    value_a=f"{area_a:.2f} dec",
+                    value_b=f"{area_b:.2f} dec",
+                    difference_description=(
+                        f"Area divergence of {diff:.2f} decimals exceeds statutory tolerance of ±{AREA_TOLERANCE_DECIMALS:.2f} dec."
+                    ),
+                )
+            )
+
+    # 5. Check Duplicate Registration / Concurrent Transfer
+    if (
+        primary.source.agency == AgencyType.SUB_REGISTRY and
+        secondary.source.agency == AgencyType.SUB_REGISTRY and
+        primary.id != secondary.id and
+        dag_a and dag_b and dag_a == dag_b
+    ):
+        discrepancies.append(
+            Discrepancy(
+                discrepancy_type=DiscrepancyType.DUPLICATE_RECORD,
+                severity=DiscrepancySeverity.BLOCKING,
+                field_name="source_record_id",
+                record_a_id=primary.id,
+                record_b_id=secondary.id,
+                value_a=primary.source.source_record_id,
+                value_b=secondary.source.source_record_id,
+                difference_description=(
+                    f"Duplicate / concurrent deed registration detected on same plot: "
+                    f"'{primary.source.source_record_id}' and '{secondary.source.source_record_id}'."
+                ),
+            )
+        )
+
+    # 6. Check Land Class Conflict
+    if primary.land_class and secondary.land_class and primary.land_class != secondary.land_class:
+        discrepancies.append(
+            Discrepancy(
+                discrepancy_type=DiscrepancyType.CLASS_CONFLICT,
+                severity=DiscrepancySeverity.WARNING,
+                field_name="land_class",
+                record_a_id=primary.id,
+                record_b_id=secondary.id,
+                value_a=primary.land_class.value,
+                value_b=secondary.land_class.value,
+                difference_description=(
+                    f"Land classification conflict: assessed as '{primary.land_class.value}' in {primary.id} "
+                    f"vs '{secondary.land_class.value}' in {secondary.id}."
+                ),
+            )
+        )
+
+    # 7. Check Owner Name
+    name_a = primary.owner_name.normalized_value if primary.owner_name else None
+    name_b = secondary.owner_name.normalized_value if secondary.owner_name else None
+    if name_a and name_b:
+        sim = phonetic_name_similarity(name_a, name_b)
+        if sim >= 0.80:
+            matched_fields.append("owner_name")
+        else:
+            # Different owner on same plot
+            if dag_a and dag_b and dag_a == dag_b:
+                discrepancies.append(
+                    Discrepancy(
+                        discrepancy_type=DiscrepancyType.OWNER_MISMATCH,
+                        severity=DiscrepancySeverity.WARNING,
+                        field_name="owner_name",
+                        record_a_id=primary.id,
+                        record_b_id=secondary.id,
+                        value_a=name_a,
+                        value_b=name_b,
+                        difference_description=f"Owner mismatch: '{name_a}' vs '{name_b}' (phonetic score: {sim:.2f}).",
+                    )
+                )
+
+    # Build RecordMatch if key spatial/title fields align
+    record_match = None
+    if mouza_match and ("dag_number" in matched_fields or "khatian_number" in matched_fields):
+        match_score = len(matched_fields) / 4.0
+        match_score = min(max(match_score, 0.5), 1.0)
+        record_match = RecordMatch(
+            target_record_id=primary.id,
+            matched_record_id=secondary.id,
+            match_score=match_score,
+            matched_fields=matched_fields,
+            match_type="CANONICAL_EXACT" if match_score >= 0.75 else "PARTIAL_MATCH",
+            explanation=f"Records agree on {', '.join(matched_fields)}.",
+        )
+
+    return record_match, discrepancies
+
+
+def verify_record_against_cohort(
+    primary: LandRecord,
+    cohort: List[LandRecord],
+) -> VerificationResult:
+    """Verifies a target LandRecord against a cohort of other records in the repository."""
+    all_matches: List[RecordMatch] = []
+    all_discrepancies: List[Discrepancy] = []
+
+    # Check completeness of the primary record itself
+    all_discrepancies.extend(evaluate_record_completeness(primary))
+
+    compared_ids: List[str] = []
+    for candidate in cohort:
+        if candidate.id == primary.id:
+            continue
+        compared_ids.append(candidate.id)
+
+        match, discs = compare_records(primary, candidate)
+        if match:
+            all_matches.append(match)
+        all_discrepancies.extend(discs)
+
+    # Determine verdict
+    has_blocking = any(d.severity == DiscrepancySeverity.BLOCKING for d in all_discrepancies)
+    has_warning = any(d.severity == DiscrepancySeverity.WARNING for d in all_discrepancies)
+
+    if has_blocking:
+        verdict = VerificationVerdict.BLOCK
+        summary = f"BLOCK: {len(all_discrepancies)} critical discrepancy/discrepancies detected across records."
+    elif has_warning:
+        verdict = VerificationVerdict.REVIEW
+        summary = f"REVIEW: {len(all_discrepancies)} non-blocking anomaly/anomalies detected requiring manual review."
+    else:
+        verdict = VerificationVerdict.CLEAR
+        summary = f"CLEAR: All records match across {len(all_matches)} verified source(s) with no discrepancies."
+
+    return VerificationResult(
+        canonical_parcel_id=primary.canonical_parcel_id,
+        primary_record_id=primary.id,
+        compared_record_ids=compared_ids,
+        verdict=verdict,
+        summary=summary,
+        matches=all_matches,
+        discrepancies=all_discrepancies,
+        is_synthetic=True,
+    )
