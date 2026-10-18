@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMapResizer();
   initMapControlButtons();
   initTabScrollCollapse();
+  initLayersPopover();
 
   const mapOk = initMap();
   initSidePanelListeners();
@@ -108,6 +109,7 @@ function injectSvgIcons() {
     if (el) el.innerHTML = svg;
   };
 
+  mapIcon('sp-icon-layers', ICONS.layers);
   mapIcon('sp-icon-recenter', ICONS.crosshair);
   mapIcon('sp-icon-reset', ICONS.rotateCcw);
   mapIcon('sp-icon-compass', ICONS.compass);
@@ -174,6 +176,37 @@ function updateLanguageStrings() {
       ? (state.context.portal === 'e_mutation' ? 'e-Mutation' : 'LD Tax Portal')
       : (state.context.portal === 'e_mutation' ? 'ই-নামজারি' : 'ভূমি কর পোর্টাল');
   }
+
+  const lblLayers = document.getElementById('sp-lbl-layers');
+  if (lblLayers) lblLayers.textContent = isEn ? 'Layers' : 'স্তরসমূহ';
+
+  const popoverTitle = document.getElementById('sp-popover-title');
+  if (popoverTitle) popoverTitle.textContent = isEn ? 'Cadastral Layers' : 'ক্যাডাস্ট্রাল স্তরসমূহ';
+
+  const lblCs = document.getElementById('lbl-l-cs');
+  if (lblCs) lblCs.textContent = isEn ? '1. Ancestral Footprint' : '১. সিএস পৈত্রিক সীমানা';
+  const areaCs = document.getElementById('area-l-cs');
+  if (areaCs) areaCs.textContent = isEn ? '18.00 dec' : '১৮.০০ শতক';
+
+  const lblDeed = document.getElementById('lbl-l-deed');
+  if (lblDeed) lblDeed.textContent = isEn ? '2. Deed Claim' : '২. দলিল দাবিকৃত জমি';
+  const areaDeed = document.getElementById('area-l-deed');
+  if (areaDeed) areaDeed.textContent = isEn ? '6.00 dec' : '৬.০০ শতক';
+
+  const lblDlrs = document.getElementById('lbl-l-dlrs');
+  if (lblDlrs) lblDlrs.textContent = isEn ? '3. DLRS Ground Truth' : '৩. ডিএলআরএস জরিপকৃত';
+  const areaDlrs = document.getElementById('area-l-dlrs');
+  if (areaDlrs) areaDlrs.textContent = isEn ? '5.10 dec' : '৫.১০ শতক';
+
+  const lblKhas = document.getElementById('lbl-l-khas');
+  if (lblKhas) lblKhas.textContent = isEn ? '4. Public Khas Canal' : '৪. সরকারি খাস নিষ্কাশন খাল';
+  const areaKhas = document.getElementById('area-l-khas');
+  if (areaKhas) areaKhas.textContent = isEn ? '4.48 dec' : '৪.৪৮ শতক';
+
+  const lblConflict = document.getElementById('lbl-l-conflict');
+  if (lblConflict) lblConflict.textContent = isEn ? '5. Conflict Zone' : '৫. বিরোধপূর্ণ এলাকা';
+  const areaConflict = document.getElementById('area-l-conflict');
+  if (areaConflict) areaConflict.textContent = isEn ? '0.90 dec' : '০.৯০ শতক';
 }
 
 function initSessionTimer() {
@@ -316,6 +349,38 @@ function initMapControlButtons() {
       loadPlotData(state.activeParcelId);
     });
   }
+}
+
+// Layers Popover Menu Toggle (Top-Left of Map)
+function initLayersPopover() {
+  const btn = document.getElementById('sp-btn-layers-toggle');
+  const popover = document.getElementById('sp-layers-popover');
+  if (!btn || !popover) return;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    popover.classList.toggle('hidden');
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!popover.contains(e.target) && e.target !== btn) {
+      popover.classList.add('hidden');
+    }
+  });
+
+  // Wire checkboxes
+  popover.querySelectorAll('input[type="checkbox"]').forEach((chk) => {
+    chk.addEventListener('change', (e) => {
+      const type = chk.dataset.layerType;
+      const isChecked = e.target.checked;
+      state.layerVisibility[type] = isChecked;
+      const layer = state.layers[type];
+      if (layer && state.map) {
+        if (isChecked) state.map.addLayer(layer);
+        else state.map.removeLayer(layer);
+      }
+    });
+  });
 }
 
 // 5. Initialize Leaflet Map
@@ -496,6 +561,14 @@ async function loadContextAndPlotData() {
         if (tabBtn) tabBtn.click();
       }, 350);
     }
+
+    const openLayers = params.get('open_layers');
+    if (openLayers === 'true') {
+      setTimeout(() => {
+        const popover = document.getElementById('sp-layers-popover');
+        if (popover) popover.classList.remove('hidden');
+      }, 450);
+    }
   }
   await loadPlotData(state.activeParcelId);
 }
@@ -632,37 +705,7 @@ function renderAllComponents(verifData, layersData, conflictData, neighborsData,
     handleChipClickHighlight(targetKey);
   });
 
-  // B. Inline Legend directly beneath map
-  const legendContainer = document.getElementById('sp-inline-legend-container');
-  renderInlineLegend(
-    legendContainer,
-    layersData,
-    (layerType, isChecked) => {
-      state.layerVisibility[layerType] = isChecked;
-      const layer = state.layers[layerType];
-      if (layer && state.map) {
-        if (isChecked) state.map.addLayer(layer);
-        else state.map.removeLayer(layer);
-      }
-    },
-    (hoveredType, isHovered) => {
-      Object.entries(state.layers).forEach(([type, layer]) => {
-        if (!layer || !state.layerVisibility[type]) return;
-        if (isHovered) {
-          if (type === hoveredType) {
-            layer.setStyle({ opacity: 1.0, fillOpacity: type === 'conflict_zone' ? 0.95 : 0.45 });
-            if (layer.bringToFront) layer.bringToFront();
-          } else {
-            layer.setStyle({ opacity: 0.3, fillOpacity: 0.08 });
-          }
-        } else {
-          resetLayerStyle(type, layer);
-        }
-      });
-    }
-  );
-
-  // C. AreaChart (Tab 1)
+  // B. AreaChart (Tab 1)
   const chartContainer = document.getElementById('overview-chart-container');
   let deedArea = 6.00;
   let dlrsArea = 5.10;

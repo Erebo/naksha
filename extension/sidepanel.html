@@ -50,8 +50,16 @@
   <div class="sp-map-panel" id="sp-map-panel">
     <div id="sp-map"></div>
 
-    <!-- Floating Top Overlay Controls (Only Map view controls, NO popover) -->
+    <!-- Floating Top Overlay Controls -->
     <div class="sp-map-top-controls">
+      <!-- Layers Button Popover Toggle -->
+      <div class="sp-map-btn-group">
+        <button class="sp-ctrl-btn" id="sp-btn-layers-toggle" type="button">
+          <span id="sp-icon-layers"></span>
+          <span id="sp-lbl-layers">স্তরসমূহ</span>
+        </button>
+      </div>
+
       <div class="sp-map-btn-group">
         <button class="sp-ctrl-btn" id="sp-btn-recenter" title="প্লটের কেন্দ্রে ফিরে যান / Recenter" type="button">
           <span id="sp-icon-recenter"></span>
@@ -69,6 +77,51 @@
           <span id="sp-icon-expand">⛶</span>
         </button>
       </div>
+    </div>
+
+    <!-- Layers Popover Menu (Initially Hidden) -->
+    <div class="sp-layers-popover hidden" id="sp-layers-popover">
+      <div class="sp-popover-title" id="sp-popover-title">ক্যাডাস্ট্রাল স্তরসমূহ</div>
+      <label class="sp-layer-toggle-row">
+        <div class="sp-layer-left">
+          <span class="sp-layer-swatch swatch-dashed-violet"></span>
+          <span id="lbl-l-cs">১. সিএস পৈত্রিক সীমানা</span>
+          <span class="sp-layer-area num" id="area-l-cs">১৮.০০ শতক</span>
+        </div>
+        <input type="checkbox" checked data-layer-type="ancestral_footprint">
+      </label>
+      <label class="sp-layer-toggle-row">
+        <div class="sp-layer-left">
+          <span class="sp-layer-swatch swatch-solid-orange"></span>
+          <span id="lbl-l-deed">২. দলিল দাবিকৃত জমি</span>
+          <span class="sp-layer-area num" id="area-l-deed">৬.০০ শতক</span>
+        </div>
+        <input type="checkbox" checked data-layer-type="deed_claim">
+      </label>
+      <label class="sp-layer-toggle-row">
+        <div class="sp-layer-left">
+          <span class="sp-layer-swatch swatch-solid-blue"></span>
+          <span id="lbl-l-dlrs">৩. ডিএলআরএস জরিপকৃত</span>
+          <span class="sp-layer-area num" id="area-l-dlrs">৫.১০ শতক</span>
+        </div>
+        <input type="checkbox" checked data-layer-type="ground_truth">
+      </label>
+      <label class="sp-layer-toggle-row">
+        <div class="sp-layer-left">
+          <span class="sp-layer-swatch swatch-wave-cyan"></span>
+          <span id="lbl-l-khas">৪. সরকারি খাস নিষ্কাশন খাল</span>
+          <span class="sp-layer-area num" id="area-l-khas">৪.৪৮ শতক</span>
+        </div>
+        <input type="checkbox" checked data-layer-type="restricted_khas">
+      </label>
+      <label class="sp-layer-toggle-row">
+        <div class="sp-layer-left">
+          <span class="sp-layer-swatch swatch-hatch-red"></span>
+          <span id="lbl-l-conflict">৫. বিরোধপূর্ণ এলাকা</span>
+          <span class="sp-layer-area num" id="area-l-conflict">০.৯০ শতক</span>
+        </div>
+        <input type="checkbox" checked data-layer-type="conflict_zone">
+      </label>
     </div>
 
     <!-- Map Bottom Decorations: North Arrow & Scale Badge -->
@@ -103,13 +156,6 @@
   <div class="sp-map-resizer" id="sp-map-resizer" title="ড্র্যাগ করে ম্যাপের উচ্চতা পরিবর্তন করুন / Drag to resize map">
     <div class="sp-resizer-line"></div>
   </div>
-
-  <!-- Inline Layer Legend (Directly beneath map) -->
-  <div class="sp-inline-legend-container" id="sp-inline-legend-container">
-    <!-- Rendered dynamically by InlineLegend.js -->
-  </div>
-
-  <!-- 5. Monochrome Sticky Tabs Navigation (44px) -->
   <nav class="sp-tab-nav">
     <button class="sp-tab-item active" data-tab="tab-overview">
       <span id="tab-icon-overview"></span>
@@ -173,7 +219,6 @@
   <script src="components/icons.js"></script>
   <script src="components/i18n.js"></script>
   <script src="components/VerdictHero.js"></script>
-  <script src="components/InlineLegend.js"></script>
   <script src="components/RuleGrid.js"></script>
   <script src="components/AreaChart.js"></script>
   <script src="components/LineageTimeline.js"></script>

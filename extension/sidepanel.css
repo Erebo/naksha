@@ -455,54 +455,72 @@ html, body {
 }
 
 /* ==============================================================================
-   5. Inline Legend (Directly beneath map, replacing popover)
+   5. Floating Layers Popover Menu (Top-Left of Map)
    ============================================================================== */
-.sp-inline-legend-container {
-  padding: 0 12px 4px;
-  flex-shrink: 0;
-}
-
-.inline-legend-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.legend-chip {
+.sp-layers-popover {
+  position: absolute;
+  top: 32px;
+  left: 6px;
+  width: 238px;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 2px 6px;
-  display: inline-flex;
+  border-radius: var(--radius-md);
+  padding: 5px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  z-index: 1001;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+}
+.sp-layers-popover.hidden {
+  display: none;
+}
+.sp-popover-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 2px;
+}
+.sp-layer-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-main);
+  padding: 2px 0;
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+.sp-layer-toggle-row:hover {
+  color: #FFFFFF;
+}
+.sp-layer-left {
+  display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
-  cursor: pointer;
-  transition: all 120ms ease;
-  user-select: none;
 }
-.legend-chip:hover {
-  background: var(--bg-surface-2);
-  border-color: var(--text-muted);
-}
-.legend-chip.inactive {
-  opacity: 0.45;
-}
-
-.leg-chk {
-  width: 11px;
-  height: 11px;
-  margin: 0;
-  accent-color: var(--accent-brand);
-  cursor: pointer;
-}
-
-.leg-swatch {
+.sp-layer-swatch {
   width: 13px;
   height: 9px;
   border-radius: 2px;
-  display: inline-block;
   flex-shrink: 0;
+  display: inline-block;
+}
+.sp-layer-area {
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-left: 2px;
+}
+.sp-layer-toggle-row input[type="checkbox"] {
+  width: 11px;
+  height: 11px;
+  accent-color: var(--accent-brand);
+  cursor: pointer;
+  margin: 0;
 }
 
 /* Exact Layer Swatches matching Real Map Styles */
@@ -526,15 +544,6 @@ html, body {
 .swatch-hatch-red {
   background: repeating-linear-gradient(45deg, var(--layer-conflict), var(--layer-conflict) 2px, rgba(244, 63, 94, 0.25) 2px, rgba(244, 63, 94, 0.25) 5px);
   border: 1.5px solid var(--layer-conflict);
-}
-
-.leg-label {
-  color: var(--text-main);
-  white-space: nowrap;
-}
-.leg-area {
-  color: var(--text-dim);
-  font-size: 9.5px;
 }
 
 /* Cadastral Layer Map Callouts & Leader Lines */
