@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>নকশা (NAKSHA) — ২ডি জিআইএস সাইড প্যানেল ও ভূমি ডেটা ইঞ্জিন</title>
+
+    <!-- Google Bengali Font: Hind Siliguri -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- Application Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Top Government-Grade Header -->
+    <header class="app-header">
+        <div class="header-left">
+            <div class="brand-emblem">নকশা</div>
+            <div class="brand-text">
+                <h1>নকশা (NAKSHA) — ক্যানোনিকাল স্প্যাশিয়াল ইঞ্জিন</h1>
+                <p class="subtitle">আন্তঃসংস্থা ভূমি ডেটা যাচাইকরণ ও ২ডি জিআইএস সমন্বয় প্ল্যাটফর্ম</p>
+            </div>
+        </div>
+
+        <div class="header-center">
+            <div id="verdict-badge" class="verdict-pill verdict-block">
+                <span class="verdict-dot"></span>
+                <span class="verdict-text">যাচাইকরণ: ব্লক (BLOCK)</span>
+            </div>
+            <div class="disclaimer-pill" title="এই ইন্টারফেসে প্রদর্শিত সমস্ত ডেটা পরীক্ষামূলক কৃত্রিম ডেটা">
+                ⚠️ নমুনা তথ্য — বাস্তব সরকারি নথি নয়
+            </div>
+        </div>
+
+        <div class="header-right">
+            <div class="officer-badge">
+                <div class="officer-title">ভূমি রাজস্ব কর্মকর্তা · গাজীপুর সদর</div>
+                <div class="session-status"><span class="status-indicator"></span>অধিবেশন সক্রিয় · ১৫:৪৫</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="main-layout">
+        <!-- Interactive 2D Leaflet Map Container -->
+        <div class="map-section">
+            <div id="map"></div>
+
+            <!-- Loading Spinner Overlay -->
+            <div id="map-loader" class="map-overlay-message">
+                <div class="spinner"></div>
+                <p>ডিজিটাল ক্যাডাস্ট্রাল মানচিত্র ও জরিপের স্তরসমূহ লোড হচ্ছে...</p>
+            </div>
+
+            <!-- API Error Overlay -->
+            <div id="map-error" class="map-overlay-message hidden">
+                <div class="error-icon">⚠️</div>
+                <p id="error-message">স্প্যাশিয়াল সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি।</p>
+                <button id="retry-btn" class="btn btn-primary">পুনরায় চেষ্টা করুন</button>
+            </div>
+
+            <!-- Floating Bangla Layer Control Panel -->
+            <div class="floating-panel layer-control-panel">
+                <div class="panel-header">
+                    <h3>মানচিত্রের স্তরসমূহ (Layers)</h3>
+                    <span class="badge" id="layer-count">৫টি স্তর</span>
+                </div>
+                <div class="layer-list" id="layer-toggles">
+                    <!-- Checkboxes generated dynamically by app.js -->
+                </div>
+            </div>
+
+            <!-- Map Floating Action Buttons -->
+            <div class="floating-map-actions">
+                <button id="btn-recenter" class="map-action-btn" title="প্লটের কেন্দ্রে ফিরে যান">
+                    🎯 কেন্দ্রবিন্দু
+                </button>
+                <button id="btn-focus-conflict" class="map-action-btn btn-alert" title="বিরোধপূর্ণ এলাকা বড় করে দেখুন">
+                    ⚠️ বিরোধ এলাকা
+                </button>
+                <button id="btn-toggle-all" class="map-action-btn" title="সকল স্তর চালু/বন্ধ করুন">
+                    👁️ সব স্তর
+                </button>
+            </div>
+
+            <!-- Floating Legend Panel -->
+            <div class="floating-panel map-legend-panel">
+                <h4>নির্দেশিকা ও চিহ্নাদি</h4>
+                <div class="legend-item">
+                    <span class="legend-color legend-cs"></span>
+                    <span>১. সিএস ৮৮ পৈত্রিক দাগ (১৮.০ শতক)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color legend-deed"></span>
+                    <span>২. দলিলে দাবিকৃত জমি (৬.০ শতক)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color legend-dlrs"></span>
+                    <span>৩. ডিএলআরএস জরিপ নকশা (৫.১০ শতক)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color legend-conflict"></span>
+                    <span>৪. সম্ভাব্য বিরোধপূর্ণ এলাকা (০.৯০ শতক)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color legend-khas"></span>
+                    <span>সরকারি খাস খাল / জলমহাল</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color legend-neighbor-paid"></span>
+                    <span>প্রতিবেশী প্লট (কর পরিশোধিত)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color legend-neighbor-due"></span>
+                    <span>প্রতিবেশী প্লট (কর বকেয়া)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side Panel: Compact Verification & Records Tab -->
+        <aside class="side-panel" id="side-panel">
+            <!-- Navigation Tabs -->
+            <nav class="side-nav">
+                <button class="nav-tab active" data-tab="tab-overview">সারসংক্ষেপ</button>
+                <button class="nav-tab" data-tab="tab-history">জরিপ ইতিহাস</button>
+                <button class="nav-tab" data-tab="tab-tax">কর ও প্রতিবেশী</button>
+                <button class="nav-tab" data-tab="tab-audit">অডিট লেজার</button>
+            </nav>
+
+            <div class="side-content">
+                <!-- TAB 1: OVERVIEW & VERDICTS -->
+                <div id="tab-overview" class="tab-pane active">
+                    <!-- Parcel Identifier Card -->
+                    <div class="card parcel-card">
+                        <div class="card-title-row">
+                            <h2 id="parcel-name">প্লট: বিএস দাগ ৪০২</h2>
+                            <span class="parcel-uuid-badge" id="parcel-uuid">UUID: 8f92-bd04</span>
+                        </div>
+                        <div class="meta-grid">
+                            <div class="meta-item">
+                                <span class="meta-label">মৌজা ও জে. এল.</span>
+                                <span class="meta-val" id="meta-mouza">কাশিমপুর (২৮)</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">উপজেলা ও জেলা</span>
+                                <span class="meta-val" id="meta-upazila">গাজীপুর সদর, গাজীপুর</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">খতিয়ান নম্বর</span>
+                                <span class="meta-val" id="meta-khatian">বিএস ১২০</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">রেকর্ডকৃত মালিক</span>
+                                <span class="meta-val" id="meta-owner">মোঃ আব্দুল করিম</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Area Comparison Meter -->
+                    <div class="card area-comparison-card">
+                        <div class="card-header-compact">
+                            <h3>জমির পরিমাণ বিশ্লেষণ</h3>
+                            <span class="discrepancy-tag tag-danger" id="area-diff-tag">ঘাটতি: ০.৯০ শতক</span>
+                        </div>
+                        <div class="area-stats-grid">
+                            <div class="area-stat-box">
+                                <span class="stat-label">দলিলে উল্লেখিত জমি</span>
+                                <span class="stat-number stat-blue" id="stat-recorded-area">৬.০০ শতক</span>
+                                <span class="stat-sub">২৪২.৮১ বর্গমিটার</span>
+                            </div>
+                            <div class="area-stat-box">
+                                <span class="stat-label">জরিপে মাপা জমি (ডিএলআরএস)</span>
+                                <span class="stat-number stat-green" id="stat-measured-area">৫.১০ শতক</span>
+                                <span class="stat-sub">২০৬.৩৯ বর্গমিটার</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar-wrap">
+                            <div class="progress-bar-fill" style="width: 85%;"></div>
+                            <div class="progress-bar-deficit" style="width: 15%;" title="অতিরিক্ত কাগজি দাবি"></div>
+                        </div>
+                        <p class="area-notice">
+                            * দলিলের কাগজি দাবি ডিএলআরএস ডিজিটাল নকশার তুলনায় ০.৯০ শতক বেশি, যা সংবিধিবদ্ধ সহনশীলতা (±০.২০ শতক) অতিক্রম করেছে।
+                        </p>
+                    </div>
+
+                    <!-- Discrepancy Findings Section -->
+                    <div class="card findings-card">
+                        <div class="card-header-compact">
+                            <h3>সনাক্তকৃত অসংগতি ও ঝুঁকির বিবরণ</h3>
+                            <span class="badge badge-alert" id="findings-count">৩টি অসংগতি</span>
+                        </div>
+                        <div class="findings-list" id="findings-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: MULTI-ERA LAND SURVEY HISTORY -->
+                <div id="tab-history" class="tab-pane">
+                    <div class="card">
+                        <div class="card-header-compact">
+                            <h3>চার যুগের সার্ভে ও বংশানুক্রমিক চেইন</h3>
+                        </div>
+                        <p class="tab-desc">ব্রিটিশ যুগ হতে আধুনিক সিটি জরিপ পর্যন্ত প্লটটির উপ-বিভাজন এবং হিস্যা:</p>
+                        
+                        <div class="lineage-timeline">
+                            <div class="timeline-step">
+                                <div class="step-marker">CS</div>
+                                <div class="step-info">
+                                    <div class="step-title">সিএস জরিপ (১৯৪০) · দাগ ৮৮</div>
+                                    <div class="step-meta">মূল অখণ্ড পৈত্রিক জমি: ১৮.০০ শতক · মালিক: রহিম বক্স</div>
+                                </div>
+                            </div>
+                            <div class="timeline-step">
+                                <div class="step-marker">SA</div>
+                                <div class="step-info">
+                                    <div class="step-title">এসএ জরিপ (১৯৬২) · দাগ ১৪২</div>
+                                    <div class="step-meta">ওয়ারিশান সূত্রে বিভাজন: ৯.০০ শতক (০.৫০০ হিস্যা)</div>
+                                </div>
+                            </div>
+                            <div class="timeline-step">
+                                <div class="step-marker">RS</div>
+                                <div class="step-info">
+                                    <div class="step-title">আরএস জরিপ (১৯৮৫) · দাগ ২১০</div>
+                                    <div class="step-meta">খতিয়ান হস্তান্তর: ৬.০০ শতক বৈধ মালিকানায় বহাল</div>
+                                </div>
+                            </div>
+                            <div class="timeline-step current">
+                                <div class="step-marker">BS</div>
+                                <div class="step-info">
+                                    <div class="step-title">বিএস জরিপ (বর্তমান) · দাগ ৪০২</div>
+                                    <div class="step-meta">ডিজিটাল ক্যাডাস্ট্রাল আয়তন: ৫.১০ শতক (দখলীয় নকশা)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="name-match-box">
+                            <div class="name-match-row">
+                                <span class="name-label">দলিলে নাম:</span>
+                                <strong class="name-val">মোঃ আব্দুল করিম</strong>
+                            </div>
+                            <div class="name-match-row">
+                                <span class="name-label">ই-নামজারিতে নাম:</span>
+                                <strong class="name-val">Md. Abdul Karim</strong>
+                            </div>
+                            <div class="name-match-score">
+                                <span class="score-pill">৯২% ফোনেটিক মিল (Phonetic Match)</span>
+                                <span class="score-sub">বর্ণভেদ দূরীকরণ ও সম্মানসূচক শব্দ অপসারণ সফল</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: TAX MAP & NEIGHBORS -->
+                <div id="tab-tax" class="tab-pane">
+                    <div class="card">
+                        <div class="card-header-compact">
+                            <h3>ভূমি উন্নয়ন কর (LD Tax) ও সীমানা</h3>
+                        </div>
+                        <p class="tab-desc">টার্গেট পার্সেল এবং এর সংলগ্ন প্রতিবেশী প্লটসমূহের রাজস্ব কর অবস্থা:</p>
+
+                        <div class="neighbor-list" id="neighbor-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: AUDIT LEDGER -->
+                <div id="tab-audit" class="tab-pane">
+                    <div class="card">
+                        <div class="card-header-compact">
+                            <h3>ক্রিপ্টোগ্রাফিক ট্রাস্ট লেজার (Audit)</h3>
+                        </div>
+                        <p class="tab-desc">প্রতিটি সিদ্ধান্ত অপরিবর্তনযোগ্য হ্যাশ চেইনে সিলমোহরকৃত:</p>
+
+                        <div class="audit-chain-box">
+                            <div class="audit-row">
+                                <span class="audit-key">অনুসন্ধানকারী কর্মকর্তা:</span>
+                                <span class="audit-val">Sub-Registrar (ID: SR-DH-09)</span>
+                            </div>
+                            <div class="audit-row">
+                                <span class="audit-key">আইনি ক্লিয়ারেন্স রায়:</span>
+                                <span class="audit-val text-alert">BLOCK (৩টি ঝুঁকি চিহ্নিত)</span>
+                            </div>
+                            <div class="audit-row">
+                                <span class="audit-key">ডিজিটাল স্বাক্ষর:</span>
+                                <span class="audit-val">Ed25519 Verified</span>
+                            </div>
+                            <div class="audit-row">
+                                <span class="audit-key">পূর্ববর্তী ব্লকের হ্যাশ:</span>
+                                <code class="hash-code">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</code>
+                            </div>
+                            <div class="audit-row">
+                                <span class="audit-key">বর্তমান ট্রাস্ট রুট:</span>
+                                <code class="hash-code">8f92bd04a11b9319e73b4f62084c79f182c49a601934c9f1b4a691bc2e89d134</code>
+                            </div>
+                        </div>
+                        <div class="audit-guarantee">
+                            🔒 কোনো প্রশাসক বা ব্যবহারকারী পূর্ববর্তী রেকর্ড পরিবর্তন করলে অডিট চেইন স্বয়ংক্রিয়ভাবে ভঙ্গ হবে।
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Application Logic -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

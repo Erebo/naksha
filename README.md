@@ -93,19 +93,20 @@ pip install -r requirements.txt
 ```
 
 ### 3. Run Test Suite
-Execute the comprehensive test suite (46 unit & integration tests covering data models, normalization, spatial engine, and APIs):
+Execute the comprehensive test suite (50 unit & integration tests covering data models, normalization, spatial engine, frontend contract, and APIs):
 ```bash
 pytest -v
 ```
 
-### 4. Start Backend Server
+### 4. Start Backend & 2D GIS Interface
 Launch the FastAPI development server:
 ```bash
 uvicorn naksha.api.app:app --reload --host 127.0.0.1 --port 8000
 ```
-Interactive API documentation will be available at:
-* Swagger UI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-* ReDoc: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+Interactive visual interface and documentation links:
+* **Bangla-First 2D GIS Interactive Map**: [http://127.0.0.1:8000/](http://127.0.0.1:8000/) or [http://127.0.0.1:8000/map](http://127.0.0.1:8000/map)
+* **Interactive API Documentation (Swagger UI)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+* **ReDoc Documentation**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
 ---
 
