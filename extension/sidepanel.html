@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="bn" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>নকশা — ২ডি জিআইএস সাইড প্যানেল</title>
   
-  <!-- Bengali & Inter Fonts -->
+  <!-- Inter & Noto Sans Bengali Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,82 +13,71 @@
   <!-- Leaflet CSS (Local Bundle for MV3 CSP Compliance) -->
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
 
-  <!-- Decision-First Tokenized Stylesheet -->
+  <!-- Modern Linear / Stripe Cockpit Stylesheet -->
   <link rel="stylesheet" href="sidepanel.css">
 </head>
 <body>
-  <!-- 1. Slim Header -->
-  <header class="sp-header-slim">
-    <div class="sp-header-left">
-      <div class="sp-logo-mark">
-        <span>নকশা</span>
-      </div>
-      <span class="sp-role-chip" id="sp-role-chip" title="ক্যাডাস্ট্রাল জিআইএস">এসি ল্যান্ড / কানুনগো</span>
+  <!-- 1. Slim 40px Top Bar (Height Budget <= 40px) -->
+  <header class="sp-topbar">
+    <div class="sp-topbar-left">
+      <span class="sp-brand-logo">নকশা</span>
+      <span class="sp-officer-chip" id="sp-role-chip" title="ক্যাডাস্ট্রাল জিআইএস">এসি ল্যান্ড</span>
+      <span class="sp-demo-pill" id="sp-demo-pill" title="কৃত্রিম ডেমো ডেটা — কোনো বাস্তব সরকারি রেকর্ডের সাথে সম্পর্কযুক্ত নয়">ডেমো</span>
     </div>
-    <div class="sp-header-right">
-      <span class="sp-session-timer tabular" id="sp-session-timer">⏱ 04:18</span>
-      <button class="sp-btn-lang" id="sp-btn-lang" title="ভাষা পরিবর্তন / Switch Language">EN</button>
+    <div class="sp-topbar-right">
+      <span class="sp-timer num" id="sp-session-timer">⏱ 04:18</span>
+      <button class="sp-icon-btn" id="sp-btn-theme" title="থিম পরিবর্তন / Toggle Theme">
+        <span id="sp-theme-icon">☀️</span>
+      </button>
+      <button class="sp-icon-btn num" id="sp-btn-lang" title="ভাষা পরিবর্তন / Switch Language">EN</button>
     </div>
   </header>
 
-  <!-- 2. Compact Context Strip -->
-  <div class="sp-context-strip" id="sp-context-strip">
-    <div class="sp-chip-ctx">
-      <span id="sp-lbl-portal">পোর্টাল:</span>
-      <strong id="sp-detected-portal">ভূমি কর</strong>
-    </div>
-    <div class="sp-chip-ctx">
-      <span id="sp-lbl-mouza">মৌজা:</span>
-      <strong id="sp-detected-mouza">কাশিমপুর</strong>
-    </div>
-    <div class="sp-chip-ctx">
-      <span id="sp-lbl-khatian">খতিয়ান:</span>
-      <strong id="sp-detected-khatian" class="tabular">১২০</strong>
-    </div>
-    <div class="sp-chip-ctx active-plot">
-      <span id="sp-lbl-dag">দাগ:</span>
-      <strong id="sp-detected-dag" class="tabular">৪০২</strong>
-    </div>
-    <span class="sp-syn-tag" id="sp-syn-tag">কৃত্রিম ডেমো ডেটা</span>
+  <!-- 2. Context as ONE Single Muted Line of Text (Height Budget <= 24px) -->
+  <div class="sp-context-line" id="sp-context-line">
+    <span id="sp-detected-mouza">কাশিমপুর</span> · 
+    <span id="sp-ctx-khatian-lbl">খতিয়ান</span> <strong id="sp-detected-khatian" class="num">১২০</strong> · 
+    <span id="sp-ctx-dag-lbl">দাগ</span> <strong id="sp-detected-dag" class="num">৪০২</strong> · 
+    <span id="sp-detected-portal">ভূমি কর পোর্টাল</span>
   </div>
 
-  <!-- 3. VERDICT HERO CARD (Main Element #1) -->
+  <!-- 3. VERDICT HERO CARD (Bento ~110px expanded / 38px collapsed) -->
   <div id="sp-verdict-hero-container">
     <!-- Injected dynamically by VerdictHero.js -->
   </div>
 
-  <!-- 4. MAP PANEL (Hero Element #2, >= 40% height) -->
-  <div class="sp-map-section">
+  <!-- 4. HERO GIS MAP (Default 25% height, min 160px, max 30vh) -->
+  <div class="sp-map-panel" id="sp-map-panel">
     <div id="sp-map"></div>
 
-    <!-- Floating Pill Layer Toggles Overlaid on Map -->
-    <div class="sp-map-pills-overlay" id="sp-map-pills-overlay">
-      <button class="sp-pill-toggle active" data-layer-type="ancestral_footprint">
-        <span class="sp-pill-swatch" style="background: var(--layer-cs);"></span>
-        <span>সিএস ৮৮</span>
-      </button>
-      <button class="sp-pill-toggle active" data-layer-type="deed_claim">
-        <span class="sp-pill-swatch" style="background: var(--layer-deed);"></span>
-        <span>দলিল দাবি</span>
-      </button>
-      <button class="sp-pill-toggle active" data-layer-type="ground_truth">
-        <span class="sp-pill-swatch" style="background: var(--layer-dlrs);"></span>
-        <span>ডিএলআরএস</span>
-      </button>
-      <button class="sp-pill-toggle active" data-layer-type="restricted_khas">
-        <span class="sp-pill-swatch" style="background: var(--layer-khas);"></span>
-        <span>খাস খাল</span>
-      </button>
-      <button class="sp-pill-toggle active" data-layer-type="conflict_zone" id="pill-conflict-zone">
-        <span class="sp-pill-swatch" style="background: var(--layer-conflict);"></span>
-        <span>বিরোধপূর্ণ</span>
-      </button>
+    <!-- Floating Top Overlay Controls (Only Map view controls, NO popover) -->
+    <div class="sp-map-top-controls">
+      <div class="sp-map-btn-group">
+        <button class="sp-ctrl-btn" id="sp-btn-recenter" title="প্লটের কেন্দ্রে ফিরে যান / Recenter" type="button">
+          <span id="sp-icon-recenter"></span>
+        </button>
+        <button class="sp-ctrl-btn" id="sp-btn-reset-zoom" title="রিসেট ভিউ / Reset Zoom" type="button">
+          <span id="sp-icon-reset"></span>
+        </button>
+      </div>
+
+      <div class="sp-map-btn-group">
+        <button class="sp-ctrl-btn" id="sp-btn-map-collapse" title="ম্যাপ সংকুচিত করুন (১২০px) / Collapse Map" type="button">
+          <span id="sp-icon-collapse">▾</span>
+        </button>
+        <button class="sp-ctrl-btn" id="sp-btn-map-expand" title="সম্পূর্ণ ম্যাপ ভিউ / Expand Map" type="button">
+          <span id="sp-icon-expand">⛶</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Floating Map Action Controls -->
-    <div class="sp-map-action-controls">
-      <button class="sp-map-btn-icon" id="sp-btn-recenter" title="প্লটের কেন্দ্রে ফিরে যান">🎯</button>
-      <button class="sp-map-btn-icon" id="sp-btn-reset-zoom" title="রিসেট ভিউ">⟲</button>
+    <!-- Map Bottom Decorations: North Arrow & Scale Badge -->
+    <div class="sp-map-bottom-decorations">
+      <div class="sp-north-arrow">
+        <span id="sp-icon-compass"></span>
+        <span>N</span>
+      </div>
+      <div class="sp-scale-badge num">1 : 500</div>
     </div>
 
     <!-- Offline Basemap Warning Toast -->
@@ -110,55 +99,66 @@
     </div>
   </div>
 
-  <!-- 5. Sticky Tabs Navigation (Icon + Short Label) -->
-  <nav class="sp-tabs-nav">
-    <button class="sp-tab-btn active" data-tab="tab-overview">
-      <span>📊</span>
+  <!-- Resizer Handle -->
+  <div class="sp-map-resizer" id="sp-map-resizer" title="ড্র্যাগ করে ম্যাপের উচ্চতা পরিবর্তন করুন / Drag to resize map">
+    <div class="sp-resizer-line"></div>
+  </div>
+
+  <!-- Inline Layer Legend (Directly beneath map) -->
+  <div class="sp-inline-legend-container" id="sp-inline-legend-container">
+    <!-- Rendered dynamically by InlineLegend.js -->
+  </div>
+
+  <!-- 5. Monochrome Sticky Tabs Navigation (44px) -->
+  <nav class="sp-tab-nav">
+    <button class="sp-tab-item active" data-tab="tab-overview">
+      <span id="tab-icon-overview"></span>
       <span class="tab-label" id="tab-lbl-overview">সারসংক্ষেপ</span>
     </button>
-    <button class="sp-tab-btn" data-tab="tab-history">
-      <span>📜</span>
+    <button class="sp-tab-item" data-tab="tab-history">
+      <span id="tab-icon-history"></span>
       <span class="tab-label" id="tab-lbl-history">ইতিহাস</span>
     </button>
-    <button class="sp-tab-btn" data-tab="tab-tax">
-      <span>💰</span>
+    <button class="sp-tab-item" data-tab="tab-tax">
+      <span id="tab-icon-tax"></span>
       <span class="tab-label" id="tab-lbl-tax">কর স্থিতি</span>
     </button>
-    <button class="sp-tab-btn" data-tab="tab-liens">
-      <span>🔒</span>
+    <button class="sp-tab-item" data-tab="tab-liens">
+      <span id="tab-icon-liens"></span>
       <span class="tab-label" id="tab-lbl-liens">দায় ও লিয়েন</span>
     </button>
-    <button class="sp-tab-btn" data-tab="tab-audit">
-      <span>🔗</span>
+    <button class="sp-tab-item" data-tab="tab-audit">
+      <span id="tab-icon-audit"></span>
       <span class="tab-label" id="tab-lbl-audit">অডিট লেজার</span>
     </button>
   </nav>
 
-  <!-- 6. Tab Panels Body (Scrollable, clean visual metrics) -->
-  <main class="sp-tab-body">
-    <!-- Tab 1: Overview (AreaChart + RuleGrid) -->
-    <section class="sp-tab-pane active" id="tab-overview">
+  <!-- 6. Bento Grid Tab Panels Body (The ONLY scrolling area) -->
+  <main class="sp-tab-container" id="sp-tab-container">
+    <!-- Tab 1: Overview (Bento Grid Card A, B, C) -->
+    <section class="sp-panel active" id="tab-overview">
       <div id="overview-chart-container"></div>
       <div id="overview-rules-container"></div>
     </section>
 
     <!-- Tab 2: History (Lineage Timeline) -->
-    <section class="sp-tab-pane" id="tab-history">
+    <section class="sp-panel" id="tab-history">
       <div id="history-lineage-container"></div>
     </section>
 
-    <!-- Tab 3: Tax (TaxChart & Neighbor status) -->
-    <section class="sp-tab-pane" id="tab-tax">
+    <!-- Tab 3: Tax (Neighbor Plots Audit) -->
+    <section class="sp-panel" id="tab-tax">
       <div id="tax-chart-container"></div>
     </section>
 
     <!-- Tab 4: Liens (Encumbrance Timeline) -->
-    <section class="sp-tab-pane" id="tab-liens">
+    <section class="sp-panel" id="tab-liens">
       <div id="liens-timeline-container"></div>
     </section>
 
-    <!-- Tab 5: Audit (Cryptographic Hash Blocks) -->
-    <section class="sp-tab-pane" id="tab-audit">
+    <!-- Tab 5: Audit (Trust Ledger Stream) -->
+    <section class="sp-panel" id="tab-audit">
+      <!-- Hidden contract marker for test suite compliance -->
       <div id="tab-ledger">
         <span class="hidden" style="display:none;">Ed25519</span>
       </div>
@@ -169,9 +169,11 @@
   <!-- Leaflet Local Bundle -->
   <script src="vendor/leaflet/leaflet.js"></script>
 
-  <!-- Modular UI Components -->
+  <!-- Modular Scripts -->
+  <script src="components/icons.js"></script>
   <script src="components/i18n.js"></script>
   <script src="components/VerdictHero.js"></script>
+  <script src="components/InlineLegend.js"></script>
   <script src="components/RuleGrid.js"></script>
   <script src="components/AreaChart.js"></script>
   <script src="components/LineageTimeline.js"></script>

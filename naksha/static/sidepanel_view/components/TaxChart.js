@@ -1,17 +1,17 @@
 /**
- * TaxChart Component (Tax & Payer Tab)
- * Donut/Stacked visualization of neighboring plots by status (Paid / Arrears / Payer != Owner).
- * Payment history timeline showing who paid vs who the khatian owner is, highlighting mismatches.
+ * TaxChart Component (Tax & Neighbor Tab)
+ * Donut / status of neighboring plots (Paid / Arrears / Payer != Owner).
+ * Payment history audit marking payer vs owner mismatches.
  */
 
-function renderTaxChart(container, taxData) {
+function renderTaxChart(container, data) {
   if (!container) return;
 
   const isEn = (typeof currentLang !== 'undefined' && currentLang === 'en');
-  const neighbors = taxData.neighbors || [
-    { dag: '401', khatian: '88', owner: 'মোঃ রহিম শেখ', payer: 'মোঃ রহিম শেখ', status: 'paid', area: '4.37' },
-    { dag: '402', khatian: '120', owner: 'মোঃ আব্দুল করিম', payer: 'মোঃ আব্দুল করিম', status: 'paid', area: '5.10' },
-    { dag: '403', khatian: '125', owner: 'আব্দুল মজিদ', payer: 'অজ্ঞাত করদাতা', status: 'arrears', area: '5.53', mismatch: true },
+  const neighbors = data.neighbors || [
+    { dag: '401', khatian: '88', owner: isEn ? 'Rahim Sheikh' : 'মোঃ রহিম শেখ', payer: isEn ? 'Rahim Sheikh' : 'মোঃ রহিম শেখ', status: 'paid', area: '4.37' },
+    { dag: '402', khatian: '120', owner: isEn ? 'Abdul Karim' : 'মোঃ আব্দুল করিম', payer: isEn ? 'Abdul Karim' : 'মোঃ আব্দুল করিম', status: 'paid', area: '5.10' },
+    { dag: '403', khatian: '125', owner: isEn ? 'Abdul Majid' : 'আব্দুল মজিদ', payer: isEn ? 'Unknown Payer' : 'অজ্ঞাত করদাতা', status: 'arrears', area: '5.53', mismatch: true },
   ];
 
   const paidCount = neighbors.filter(n => n.status === 'paid').length;
@@ -19,54 +19,42 @@ function renderTaxChart(container, taxData) {
   const mismatchCount = neighbors.filter(n => n.mismatch).length;
 
   container.innerHTML = `
-    <div class="tax-chart-container">
-      <div class="tax-overview-row">
-        <!-- Mini Status Distribution -->
-        <div class="tax-stat-pill" style="border-left: 3px solid var(--status-clear);">
-          <span class="stat-num tabular font-bold" style="color: var(--status-clear);">${paidCount}</span>
-          <span class="stat-lbl">${isEn ? 'Tax Paid' : 'কর পরিশোধিত'}</span>
+    <div class="bento-card">
+      <div class="bento-card-header">
+        <span class="bento-title">${isEn ? 'Neighbor Plots Tax Audit' : 'প্রতিবেশী প্লট কর স্থিতি'}</span>
+        <span class="bento-badge num">${isEn ? `${neighbors.length} plots verified` : `${formatNumber(neighbors.length, 0)}টি প্লট যাচাইকৃত`}</span>
+      </div>
+
+      <!-- Status Pills Summary -->
+      <div class="tax-status-metric-row">
+        <div class="tsm-item">
+          <span class="tsm-val num font-bold" style="color: var(--status-clear);">${formatNumber(paidCount, 0)}</span>
+          <span class="tsm-lbl">${isEn ? 'Paid' : 'পরিশোধিত'}</span>
         </div>
-        <div class="tax-stat-pill" style="border-left: 3px solid var(--status-review);">
-          <span class="stat-num tabular font-bold" style="color: var(--status-review);">${arrearsCount}</span>
-          <span class="stat-lbl">${isEn ? 'In Arrears' : 'কর বকেয়া'}</span>
+        <div class="tsm-item">
+          <span class="tsm-val num font-bold" style="color: var(--status-review);">${formatNumber(arrearsCount, 0)}</span>
+          <span class="tsm-lbl">${isEn ? 'In Arrears' : 'বকেয়া'}</span>
         </div>
-        <div class="tax-stat-pill" style="border-left: 3px solid var(--status-block);">
-          <span class="stat-num tabular font-bold" style="color: var(--status-block);">${mismatchCount}</span>
-          <span class="stat-lbl">${isEn ? 'Payer Mismatch' : 'করদাতা অমিল'}</span>
+        <div class="tsm-item">
+          <span class="tsm-val num font-bold" style="color: var(--status-block);">${formatNumber(mismatchCount, 0)}</span>
+          <span class="tsm-lbl">${isEn ? 'Payer Mismatch' : 'করদাতা অমিল'}</span>
         </div>
       </div>
 
-      <div class="tax-table-header">
-        <span>${isEn ? 'Neighbor Parcel Tax & Payer Auditing' : 'প্রতিবেশী প্লট কর স্থিতি ও করদাতা নিরীক্ষা'}</span>
-      </div>
-
-      <!-- Neighbor Plot Assessment Cards -->
-      <div class="tax-cards-list">
+      <!-- Neighbor Plot Cards List -->
+      <div class="tax-parcel-rows">
         ${neighbors.map(n => `
-          <div class="tax-card ${n.mismatch ? 'mismatch-row' : ''}">
-            <div class="tc-top">
-              <span class="tc-dag font-bold">${isEn ? 'Dag' : 'দাগ'} <span class="tabular">${n.dag}</span></span>
-              <span class="tc-badge ${n.status === 'paid' ? 'badge-paid' : 'badge-arrears'}">
+          <div class="tax-parcel-card ${n.mismatch ? 'mismatch-flagged' : ''}">
+            <div class="tpc-top">
+              <span class="tpc-dag font-bold num">${isEn ? 'Dag' : 'দাগ'} ${formatNumber(n.dag, 0)}</span>
+              <span class="tpc-badge num" style="color: ${n.status === 'paid' ? 'var(--status-clear)' : 'var(--status-review)'};">
                 ${n.status === 'paid' ? (isEn ? 'Paid' : 'পরিশোধিত') : (isEn ? '3 Yrs Arrears' : '৩ বছর বকেয়া')}
               </span>
             </div>
-            <div class="tc-grid">
-              <div class="tc-item">
-                <span class="tc-label">${isEn ? 'Owner' : 'খতিয়ান মালিক'}</span>
-                <span class="tc-val">${n.owner}</span>
-              </div>
-              <div class="tc-item">
-                <span class="tc-label">${isEn ? 'Last Payer' : 'দাখিলা করদাতা'}</span>
-                <span class="tc-val ${n.mismatch ? 'text-danger font-bold' : ''}">
-                  ${n.payer} ${n.mismatch ? '⚠️' : ''}
-                </span>
-              </div>
+            <div class="tpc-details">
+              <span>${isEn ? 'Owner' : 'খতিয়ান'}: <strong>${n.owner}</strong></span>
+              <span>${isEn ? 'Payer' : 'করদাতা'}: <strong style="${n.mismatch ? 'color: var(--status-review);' : ''}">${n.payer} ${n.mismatch ? '•' : ''}</strong></span>
             </div>
-            ${n.mismatch ? `
-              <div class="tc-warning-line">
-                ⚠️ ${isEn ? 'Payer differs from recorded Khatian title-holder.' : 'খতিয়ানভুক্ত মালিকের পরিবর্তে তৃতীয় পক্ষের কর প্রদানের তথ্য।'}
-              </div>
-            ` : ''}
           </div>
         `).join('')}
       </div>

@@ -1,60 +1,59 @@
 /* ==============================================================================
-   NAKSHA (নকশা) — Design System Tokens
-   Decision-First Government Land Revenue Spatial Intelligence Cockpit
-   Strict 8px Grid, 12px Radii, Tabular Numerals, High WCAG Contrast
+   NAKSHA (নকশা) — Linear / Stripe-Grade Minimalist Design Tokens
+   Strict 8px Grid, Neutral Graphite (No Blue Cast), Status-Only Colors
+   Dark Theme (Default) + Light Theme Support
    ============================================================================== */
 
 :root {
-  /* Strict Palette */
-  --bg-canvas: #0B1220;
-  --bg-surface: #111A2E;
-  --bg-surface-elevated: #19253F;
-  --bg-surface-muted: #131E35;
-  --border-subtle: #1E2A44;
-  --border-focus: #14B8A6;
+  /* Neutral Graphite Dark Theme (Default) */
+  --bg-app: #09090B;
+  --bg-surface: #111114;
+  --bg-surface-2: #18181C;
+  --bg-surface-elevated: #202026;
+  --border-subtle: #26262C;
+  --border-focus: #FFFFFF;
 
   /* Typography Colors */
-  --text-main: #E6EBF5;
-  --text-muted: #8FA0BF;
-  --text-dim: #5A6B8A;
-  --text-inverse: #0B1220;
+  --text-main: #F4F4F5;
+  --text-muted: #9A9AA5;
+  --text-dim: #52525B;
+  --text-inverse: #09090B;
 
-  /* Semantic Status Palette (Status ONLY) */
-  --status-clear: #22C55E;
-  --status-clear-bg: rgba(34, 197, 94, 0.12);
-  --status-clear-border: rgba(34, 197, 94, 0.35);
+  /* Saturated Colors ONLY for Status */
+  --status-clear: #34D399;       /* Mint Green */
+  --status-clear-bg: rgba(52, 211, 153, 0.10);
+  --status-clear-border: rgba(52, 211, 153, 0.30);
 
-  --status-review: #F59E0B;
-  --status-review-bg: rgba(245, 158, 11, 0.12);
-  --status-review-border: rgba(245, 158, 11, 0.35);
+  --status-review: #FBBF24;      /* Amber Yellow */
+  --status-review-bg: rgba(251, 191, 36, 0.10);
+  --status-review-border: rgba(251, 191, 36, 0.30);
 
-  --status-block: #EF4444;
-  --status-block-bg: rgba(239, 68, 68, 0.12);
-  --status-block-border: rgba(239, 68, 68, 0.35);
+  --status-block: #F43F5E;       /* Rose Red */
+  --status-block-bg: rgba(244, 63, 94, 0.10);
+  --status-block-border: rgba(244, 63, 94, 0.30);
 
-  /* Single Brand Interactive Accent */
-  --accent-teal: #14B8A6;
-  --accent-teal-bg: rgba(20, 184, 166, 0.12);
-  --accent-teal-border: rgba(20, 184, 166, 0.40);
+  /* Brand Accent (Logo mark & focus outline only) */
+  --accent-brand: #2DD4BF;
 
-  /* Map Survey Layer Accents */
-  --layer-cs: #8B5CF6;
-  --layer-deed: #3B82F6;
-  --layer-dlrs: #10B981;
-  --layer-khas: #0EA5E9;
-  --layer-conflict: #EF4444;
+  /* Map Cadastral Layers (Differentiated by Hue, Dash & Fill Texture) */
+  --layer-cs: #A78BFA;           /* Violet, long-dash outline, 10% flat fill */
+  --layer-deed: #FB923C;         /* Orange, solid 2px outline, 15% flat fill */
+  --layer-dlrs: #3B82F6;         /* Blue, solid 3px outline, 30% flat fill */
+  --layer-khas: #22D3EE;         /* Cyan, no outline, wave/pattern texture fill */
+  --layer-conflict: #F43F5E;     /* BLOCK Red, diagonal hatch, always on top */
+  --layer-neighbors: #52525B;    /* Grey, thin dotted outline, no fill */
 
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-bn: 'Noto Sans Bengali', 'Hind Siliguri', -apple-system, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-bn: 'Noto Sans Bengali', -apple-system, sans-serif;
 
-  /* Radius & Shadows */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
   --radius-full: 9999px;
 
-  /* Spatial Grid (8px baseline) */
+  /* Grid spacing baseline */
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
@@ -63,7 +62,25 @@
   --sp-6: 24px;
 }
 
-/* Base Reset & Global Rules */
+/* Light Theme Variables */
+[data-theme="light"] {
+  --bg-app: #FAFAFA;
+  --bg-surface: #FFFFFF;
+  --bg-surface-2: #F4F4F5;
+  --bg-surface-elevated: #E4E4E7;
+  --border-subtle: #E4E4E7;
+  --border-focus: #18181B;
+
+  --text-main: #18181B;
+  --text-muted: #71717A;
+  --text-dim: #A1A1AA;
+  --text-inverse: #FFFFFF;
+
+  --status-clear-bg: rgba(52, 211, 153, 0.15);
+  --status-review-bg: rgba(251, 191, 36, 0.15);
+  --status-block-bg: rgba(244, 63, 94, 0.15);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -71,8 +88,8 @@
 }
 
 body {
-  font-family: var(--font-bn);
-  background-color: var(--bg-canvas);
+  font-family: var(--font-bn), var(--font-sans);
+  background-color: var(--bg-app);
   color: var(--text-main);
   line-height: 1.4;
   height: 100vh;
@@ -83,19 +100,19 @@ body {
   user-select: none;
 }
 
-/* Tabular Numerals for metrics, dates, and areas */
-.tabular, .num, .metric-val, code, .badge-count {
-  font-family: 'Inter', monospace;
+/* Strict Tabular Numerals */
+.num, .tabular, code, .tnum {
+  font-family: var(--font-sans);
   font-feature-settings: 'tnum' 1;
 }
 
-/* Scrollbar Styling */
+/* Minimalist Scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-canvas);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border-subtle);

@@ -1,7 +1,8 @@
 /**
  * AuditChain Component (Audit Tab)
- * Visual chain of hash blocks (short hash, time, actor, action) with link lines.
- * Green "Chain Intact" badge, Ed25519 digital signature detail line.
+ * Pinned "Chain intact" status banner at the top.
+ * Compact 2-line blocks (Line 1: short hash + time; Line 2: actor + action + signature check).
+ * Fits 5 blocks without scrolling at 700px panel height. Includes a "View all" link.
  */
 
 function renderAuditChain(container, ledgerEntries, integrityStatus) {
@@ -9,62 +10,52 @@ function renderAuditChain(container, ledgerEntries, integrityStatus) {
 
   const isEn = (typeof currentLang !== 'undefined' && currentLang === 'en');
   const isChainIntact = integrityStatus?.is_valid !== false;
+  const entries = ledgerEntries || [];
+  const displayLimit = 5;
+  const shownEntries = entries.slice(0, displayLimit);
 
   container.innerHTML = `
-    <div class="audit-chain-container">
-      <!-- Chain Status Header -->
-      <div class="chain-status-banner ${isChainIntact ? 'banner-intact' : 'banner-broken'}">
-        <div class="csb-left">
-          <span class="csb-icon">${isChainIntact ? '🔒' : '⚠️'}</span>
-          <div>
-            <div class="csb-title font-bold">
-              ${isChainIntact ? (isEn ? 'Audit Hash Chain Intact' : 'ডিজিটাল ট্রাস্ট লেজার অটুট (INTACT)') : (isEn ? 'Hash Integrity Broken' : 'হ্যাশ চেইনে অসংগতি!')}
+    <div class="audit-pinned-banner">
+      <div class="apb-left">
+        <span class="apb-badge num" style="color: ${isChainIntact ? 'var(--status-clear)' : 'var(--status-block)'};">
+          ${isChainIntact ? (isEn ? '● CHAIN INTACT' : '● লেজার সম্পূর্ণ অটুট') : (isEn ? '● INTEGRITY COMPROMISED' : '● অডিট ত্রুটি')}
+        </span>
+        <span class="apb-count num">${entries.length} ${isEn ? 'verified blocks' : 'টি ব্লক'}</span>
+      </div>
+      <span class="apb-algo num">SHA-256 + Ed25519</span>
+    </div>
+
+    <!-- Compact 2-Line Block Stream (5 visible without scroll) -->
+    <div class="audit-compact-stream">
+      ${shownEntries.map((entry) => {
+        const shortHash = entry.entry_hash ? entry.entry_hash.slice(0, 16) + '...' : 'GENESIS';
+        const time = entry.timestamp ? entry.timestamp.slice(11, 19) + ' UTC' : '';
+        const actor = entry.officer_id || 'UL-2024-KSH';
+        const dagStr = entry.dag_number ? formatNumber(entry.dag_number, 0) : '';
+
+        return `
+          <div class="audit-block-card">
+            <!-- Line 1: Short Hash & Timestamp -->
+            <div class="abc-line-1">
+              <span class="abc-hash num font-bold">#${formatNumber(entry.index, 0)} <code>${shortHash}</code></span>
+              <span class="abc-time num">${time}</span>
             </div>
-            <div class="csb-sub">
-              ${isEn ? 'Algorithm: SHA-256 + Ed25519 Signatures' : 'অ্যালগরিদম: SHA-256 চেইন + Ed25519 ডিজিটাল স্বাক্ষর'}
+            <!-- Line 2: Actor, Action & Signature Tick -->
+            <div class="abc-line-2">
+              <span class="abc-actor">${actor} · <strong>${entry.event_type}</strong> ${dagStr ? `· ${isEn ? 'Dag' : 'দাগ'} ${dagStr}` : ''}</span>
+              <span class="abc-signed num" style="color: var(--status-clear);">✓ Ed25519</span>
             </div>
           </div>
-        </div>
-        <div class="csb-badge tabular">
-          ${ledgerEntries ? ledgerEntries.length : 0} ${isEn ? 'Blocks' : 'ব্লক'}
-        </div>
-      </div>
-
-      <!-- Connected Blocks List -->
-      <div class="blocks-track">
-        ${(ledgerEntries || []).map((entry, index) => {
-          const shortHash = entry.entry_hash ? entry.entry_hash.slice(0, 16) + '...' : 'GENESIS';
-          const prevHash = entry.previous_hash ? entry.previous_hash.slice(0, 8) + '...' : '00000000...';
-          const time = entry.timestamp ? entry.timestamp.slice(11, 19) + ' UTC' : '';
-
-          return `
-            <div class="block-card">
-              <div class="bc-indicator-line"></div>
-              <div class="bc-header">
-                <div class="bc-num-group">
-                  <span class="bc-num tabular font-bold">#${entry.index}</span>
-                  <span class="bc-event font-bold">${entry.event_type}</span>
-                </div>
-                <span class="bc-time tabular">${time}</span>
-              </div>
-
-              <div class="bc-payload">
-                <div class="bc-row">
-                  <span class="bc-lbl">${isEn ? 'Actor' : 'ব্যবহারকারী'}:</span>
-                  <span class="bc-val font-bold">${entry.officer_id || 'UL-2024-KSH'}</span>
-                  ${entry.dag_number ? `· <span class="bc-lbl">${isEn ? 'Plot' : 'দাগ'}:</span> <strong class="tabular">${entry.dag_number}</strong>` : ''}
-                  ${entry.verdict ? `· <span class="bc-lbl">${isEn ? 'Verdict' : 'রায়'}:</span> <strong>${entry.verdict}</strong>` : ''}
-                </div>
-                <div class="bc-row bc-hash-row">
-                  <span class="bc-lbl">Hash:</span>
-                  <code class="bc-code tabular">${shortHash}</code>
-                  <span class="bc-verified">✓ Ed25519</span>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
+        `;
+      }).join('')}
     </div>
+
+    ${entries.length > displayLimit ? `
+      <div class="audit-view-all-row">
+        <button class="audit-view-all-btn num" type="button">
+          ${isEn ? `View all ${entries.length} blocks ▾` : `সকল ${toBnDigits(entries.length)}টি ব্লক দেখুন ▾`}
+        </button>
+      </div>
+    ` : ''}
   `;
 }

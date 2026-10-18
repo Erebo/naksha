@@ -1,7 +1,8 @@
 /**
  * NAKSHA (নকশা) — Side Panel Application Logic
  * Integrates Leaflet 2D GIS with FastAPI backend (http://127.0.0.1:8000).
- * Decision-First UI Architecture connecting VerdictHero, AreaChart, RuleGrid, Lineage, Tax, Liens, Audit.
+ * Linear / Stripe Minimalist Cockpit Architecture.
+ * Height-Budget Conscious: Slim Header, Auto-Collapsing Hero, Resizable Map, Inline Legend.
  */
 
 const API_BASE = 'http://127.0.0.1:8000';
@@ -36,62 +37,88 @@ const state = {
 
 const LAYER_CONFIG = {
   ancestral_footprint: {
-    color: '#8b5cf6',
-    weight: 2,
-    dashArray: '5, 5',
-    fillColor: '#8b5cf6',
-    fillOpacity: 0.15,
+    color: '#A78BFA',
+    weight: 1.5,
+    dashArray: '8, 4',
+    fillColor: '#A78BFA',
+    fillOpacity: 0.10,
     name: '১. সিএস পৈত্রিক সীমানা (CS 88)',
     shortName: 'সিএস ৮৮',
   },
   deed_claim: {
-    color: '#3b82f6',
+    color: '#FB923C',
     weight: 2,
-    fillColor: '#3b82f6',
-    fillOpacity: 0.25,
+    dashArray: null,
+    fillColor: '#FB923C',
+    fillOpacity: 0.15,
     name: '২. দলিলে দাবিকৃত জমি (Deed Claim)',
     shortName: 'দলিল দাবি',
   },
   ground_truth: {
-    color: '#10b981',
+    color: '#3B82F6',
     weight: 3,
-    fillColor: '#10b981',
-    fillOpacity: 0.35,
+    dashArray: null,
+    fillColor: '#3B82F6',
+    fillOpacity: 0.30,
     name: '৩. ডিএলআরএস জরিপকৃত জমি (DLRS Survey)',
     shortName: 'ডিএলআরএস',
   },
-  conflict_zone: {
-    color: '#ef4444',
-    weight: 2,
-    fillColor: '#ef4444',
-    fillOpacity: 0.70,
-    name: '৪. বিরোধপূর্ণ এলাকা (Khas Canal Conflict)',
-    shortName: 'বিরোধপূর্ণ',
-  },
   restricted_khas: {
-    color: '#0ea5e9',
-    weight: 2,
-    fillColor: '#0ea5e9',
-    fillOpacity: 0.35,
+    color: '#22D3EE',
+    weight: 0,
+    dashArray: null,
+    fillColor: '#22D3EE',
+    fillOpacity: 0.25,
+    stroke: false,
     name: 'সরকারি খাস নিষ্কাশন খাল (Public Khas Canal)',
     shortName: 'খাস খাল',
+  },
+  conflict_zone: {
+    color: '#F43F5E',
+    weight: 2.5,
+    dashArray: null,
+    fillColor: '#F43F5E',
+    fillOpacity: 0.65,
+    name: '৪. বিরোধপূর্ণ এলাকা (Khas Canal Conflict)',
+    shortName: 'বিরোধপূর্ণ',
   },
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  injectSvgIcons();
   initTabs();
   initLanguageToggle();
+  initThemeToggle();
   initSessionTimer();
+  initMapResizer();
+  initMapControlButtons();
+  initTabScrollCollapse();
+
   const mapOk = initMap();
   initSidePanelListeners();
   if (mapOk) {
     loadContextAndPlotData();
   }
-  setupActionButtons();
-  initLayerPillToggles();
 });
 
-// 1. Language Toggle & Session Timer
+// 1. Inject SVG Icons
+function injectSvgIcons() {
+  const mapIcon = (id, svg) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = svg;
+  };
+
+  mapIcon('sp-icon-recenter', ICONS.crosshair);
+  mapIcon('sp-icon-reset', ICONS.rotateCcw);
+  mapIcon('sp-icon-compass', ICONS.compass);
+  mapIcon('tab-icon-overview', ICONS.overview);
+  mapIcon('tab-icon-history', ICONS.history);
+  mapIcon('tab-icon-tax', ICONS.tax);
+  mapIcon('tab-icon-liens', ICONS.shield);
+  mapIcon('tab-icon-audit', ICONS.link);
+}
+
+// 2. Language & Theme Toggles
 function initLanguageToggle() {
   const btn = document.getElementById('sp-btn-lang');
   if (!btn) return;
@@ -103,24 +130,24 @@ function initLanguageToggle() {
   });
 }
 
+function initThemeToggle() {
+  const btn = document.getElementById('sp-btn-theme');
+  const icon = document.getElementById('sp-theme-icon');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const theme = toggleTheme();
+    if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+  });
+}
+
 function updateLanguageStrings() {
   const isEn = currentLang === 'en';
   const roleEl = document.getElementById('sp-role-chip');
-  if (roleEl) roleEl.textContent = isEn ? 'AC Land / Kanoongo' : 'এসি ল্যান্ড / কানুনগো';
+  if (roleEl) roleEl.textContent = isEn ? 'AC Land' : 'এসি ল্যান্ড';
 
-  const synEl = document.getElementById('sp-syn-tag');
-  if (synEl) synEl.textContent = isEn ? 'Synthetic Data' : 'কৃত্রিম ডেমো ডেটা';
+  const demoEl = document.getElementById('sp-demo-pill');
+  if (demoEl) demoEl.textContent = isEn ? 'DEMO' : 'ডেমো';
 
-  const lblPortal = document.getElementById('sp-lbl-portal');
-  if (lblPortal) lblPortal.textContent = isEn ? 'Portal:' : 'পোর্টাল:';
-  const lblMouza = document.getElementById('sp-lbl-mouza');
-  if (lblMouza) lblMouza.textContent = isEn ? 'Mouza:' : 'মৌজা:';
-  const lblKhatian = document.getElementById('sp-lbl-khatian');
-  if (lblKhatian) lblKhatian.textContent = isEn ? 'Khatian:' : 'খতিয়ান:';
-  const lblDag = document.getElementById('sp-lbl-dag');
-  if (lblDag) lblDag.textContent = isEn ? 'Plot:' : 'দাগ:';
-
-  // Update Tab Labels
   const tabOverview = document.getElementById('tab-lbl-overview');
   if (tabOverview) tabOverview.textContent = isEn ? 'Overview' : 'সারসংক্ষেপ';
   const tabHistory = document.getElementById('tab-lbl-history');
@@ -131,46 +158,171 @@ function updateLanguageStrings() {
   if (tabLiens) tabLiens.textContent = isEn ? 'Liens' : 'দায় ও লিয়েন';
   const tabAudit = document.getElementById('tab-lbl-audit');
   if (tabAudit) tabAudit.textContent = isEn ? 'Audit' : 'অডিট লেজার';
+
+  const ctxKhatian = document.getElementById('sp-ctx-khatian-lbl');
+  if (ctxKhatian) ctxKhatian.textContent = isEn ? 'Khatian' : 'খতিয়ান';
+  const ctxDag = document.getElementById('sp-ctx-dag-lbl');
+  if (ctxDag) ctxDag.textContent = isEn ? 'Dag' : 'দাগ';
+
+  const dagEl = document.getElementById('sp-detected-dag');
+  if (dagEl) dagEl.textContent = isEn ? state.context.dag : toBnDigits(state.context.dag);
+  const khatEl = document.getElementById('sp-detected-khatian');
+  if (khatEl) khatEl.textContent = isEn ? state.context.khatian : toBnDigits(state.context.khatian);
+  const portalEl = document.getElementById('sp-detected-portal');
+  if (portalEl) {
+    portalEl.textContent = isEn
+      ? (state.context.portal === 'e_mutation' ? 'e-Mutation' : 'LD Tax Portal')
+      : (state.context.portal === 'e_mutation' ? 'ই-নামজারি' : 'ভূমি কর পোর্টাল');
+  }
 }
 
 function initSessionTimer() {
   const timerEl = document.getElementById('sp-session-timer');
   if (!timerEl) return;
-  let sec = 258; // 04:18 starting countdown
+  let sec = 258;
   setInterval(() => {
     sec++;
     const m = String(Math.floor(sec / 60)).padStart(2, '0');
     const s = String(sec % 60).padStart(2, '0');
-    timerEl.textContent = `⏱ ${m}:${s}`;
+    const isEn = currentLang === 'en';
+    timerEl.textContent = `⏱ ${isEn ? m : toBnDigits(m)}:${isEn ? s : toBnDigits(s)}`;
   }, 1000);
 }
 
-// 2. Initialize Tabs
+// 3. Tab Switching & Auto-Collapsing Hero on Tab Switch
 function initTabs() {
-  const tabs = document.querySelectorAll('.sp-tab-btn');
+  const tabs = document.querySelectorAll('.sp-tab-item');
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => {
       tabs.forEach((t) => t.classList.remove('active'));
-      document.querySelectorAll('.sp-tab-pane').forEach((c) => c.classList.remove('active'));
+      document.querySelectorAll('.sp-panel').forEach((c) => c.classList.remove('active'));
       tab.classList.add('active');
       const target = document.getElementById(tab.dataset.tab);
       if (target) target.classList.add('active');
+
+      // Auto-collapse Verdict Hero if switching to any tab other than Overview
+      const vContainer = document.getElementById('sp-verdict-hero-container');
+      if (vContainer) {
+        if (tab.dataset.tab !== 'tab-overview') {
+          collapseVerdictHero(vContainer);
+        }
+      }
     });
   });
 }
 
-// 3. Initialize Leaflet Map
+// Auto-collapse Verdict Hero on scrolling tab content
+function initTabScrollCollapse() {
+  const tabContainer = document.getElementById('sp-tab-container');
+  if (!tabContainer) return;
+
+  tabContainer.addEventListener('scroll', () => {
+    if (tabContainer.scrollTop > 25) {
+      const vContainer = document.getElementById('sp-verdict-hero-container');
+      if (vContainer) collapseVerdictHero(vContainer);
+    }
+  }, { passive: true });
+}
+
+function collapseVerdictHero(container) {
+  if (!container || container.classList.contains('collapsed')) return;
+  container.classList.add('collapsed');
+  const exp = container.querySelector('.vh-expanded-box');
+  const col = container.querySelector('.vh-collapsed-bar');
+  if (exp) exp.classList.add('hidden');
+  if (col) col.classList.remove('hidden');
+}
+
+// 4. Map Resizer & View Buttons
+function initMapResizer() {
+  const resizer = document.getElementById('sp-map-resizer');
+  const mapPanel = document.getElementById('sp-map-panel');
+  if (!resizer || !mapPanel) return;
+
+  // Restore remembered height from session state
+  const savedHeight = sessionStorage.getItem('naksha_map_height');
+  if (savedHeight) {
+    mapPanel.style.height = savedHeight;
+  }
+
+  let startY = 0;
+  let startHeight = 0;
+
+  const onMouseMove = (e) => {
+    const delta = e.clientY - startY;
+    const newHeight = Math.max(120, Math.min(window.innerHeight * 0.65, startHeight + delta));
+    mapPanel.style.height = `${newHeight}px`;
+    if (state.map) state.map.invalidateSize();
+  };
+
+  const onMouseUp = () => {
+    resizer.classList.remove('active');
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+    sessionStorage.setItem('naksha_map_height', mapPanel.style.height);
+    if (state.map) state.map.invalidateSize();
+  };
+
+  resizer.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    startY = e.clientY;
+    startHeight = mapPanel.getBoundingClientRect().height;
+    resizer.classList.add('active');
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  });
+}
+
+function initMapControlButtons() {
+  const mapPanel = document.getElementById('sp-map-panel');
+  const btnCollapse = document.getElementById('sp-btn-map-collapse');
+  const btnExpand = document.getElementById('sp-btn-map-expand');
+
+  if (btnCollapse && mapPanel) {
+    btnCollapse.addEventListener('click', () => {
+      mapPanel.classList.remove('map-expanded');
+      mapPanel.classList.toggle('map-collapsed');
+      setTimeout(() => { if (state.map) state.map.invalidateSize(); }, 180);
+    });
+  }
+
+  if (btnExpand && mapPanel) {
+    btnExpand.addEventListener('click', () => {
+      mapPanel.classList.remove('map-collapsed');
+      mapPanel.classList.toggle('map-expanded');
+      setTimeout(() => { if (state.map) state.map.invalidateSize(); }, 180);
+    });
+  }
+
+  const recenterBtn = document.getElementById('sp-btn-recenter');
+  if (recenterBtn) {
+    recenterBtn.addEventListener('click', () => {
+      if (state.targetBounds && state.map) {
+        state.map.fitBounds(state.targetBounds, { padding: [35, 35] });
+      }
+    });
+  }
+
+  const resetBtn = document.getElementById('sp-btn-reset-zoom');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      if (state.map) state.map.setView([23.98506, 90.35035], 19);
+    });
+  }
+
+  const retryBtn = document.getElementById('sp-retry-btn');
+  if (retryBtn) {
+    retryBtn.addEventListener('click', () => {
+      loadPlotData(state.activeParcelId);
+    });
+  }
+}
+
+// 5. Initialize Leaflet Map
 function initMap() {
   if (typeof L === 'undefined') {
-    console.error('[NAKSHA SidePanel] Leaflet library L is not loaded.');
     const errorEl = document.getElementById('sp-map-error');
-    const errorMsg = document.getElementById('sp-error-message');
-    const loader = document.getElementById('sp-map-loader');
-    if (loader) loader.classList.add('hidden');
-    if (errorEl) {
-      errorEl.classList.remove('hidden');
-      if (errorMsg) errorMsg.textContent = 'Leaflet library failed to load.';
-    }
+    if (errorEl) errorEl.classList.remove('hidden');
     return false;
   }
 
@@ -183,32 +335,30 @@ function initMap() {
       zoom: 19,
       maxZoom: 21,
       minZoom: 14,
-      zoomControl: false, // Clean side panel UI
+      zoomControl: false,
       attributionControl: false,
     });
 
-    // Muted CartoDB Positron / OSM Basemap without watermark
     const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       subdomains: ['a', 'b', 'c'],
     });
 
-    let tileWarningTriggered = false;
     tileLayer.on('tileerror', () => {
-      if (!tileWarningTriggered) {
-        tileWarningTriggered = true;
-        const warnEl = document.getElementById('sp-tile-warning');
-        if (warnEl) {
-          warnEl.classList.remove('hidden');
-          setTimeout(() => warnEl.classList.add('hidden'), 5000);
-        }
+      const warnEl = document.getElementById('sp-tile-warning');
+      if (warnEl) {
+        warnEl.classList.remove('hidden');
+        setTimeout(() => warnEl.classList.add('hidden'), 5000);
       }
     });
 
     tileLayer.addTo(state.map);
 
     setTimeout(() => {
-      if (state.map) state.map.invalidateSize();
+      if (state.map) {
+        state.map.invalidateSize();
+        injectSvgMapPatterns();
+      }
     }, 120);
 
     window.addEventListener('resize', () => {
@@ -222,17 +372,46 @@ function initMap() {
   }
 }
 
-// 4. Resolve backend parcel ID from Dag number
-function resolveParcelId(dag) {
-  if (!dag) return state.activeParcelId || DEFAULT_PARCEL_ID;
-  const clean = String(dag).trim();
-  if (clean === '402') return 'par-8f92-bd04-syn';
-  if (clean === '401') return 'BS-401';
-  if (clean === '403') return 'BS-403';
-  return clean;
+// Inject SVG Hatch & Wave Patterns into Leaflet Overlay Pane
+function injectSvgMapPatterns() {
+  const svg = document.querySelector('#sp-map svg');
+  if (!svg) return;
+
+  let defs = svg.querySelector('defs');
+  if (!defs) {
+    defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    svg.prepend(defs);
+  }
+
+  if (!document.getElementById('pattern-hatch-red')) {
+    const hatch = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+    hatch.setAttribute('id', 'pattern-hatch-red');
+    hatch.setAttribute('patternUnits', 'userSpaceOnUse');
+    hatch.setAttribute('width', '8');
+    hatch.setAttribute('height', '8');
+    hatch.setAttribute('patternTransform', 'rotate(45 0 0)');
+    hatch.innerHTML = `
+      <rect width="8" height="8" fill="#F43F5E" fill-opacity="0.25" />
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#F43F5E" stroke-width="2.5" />
+    `;
+    defs.appendChild(hatch);
+  }
+
+  if (!document.getElementById('pattern-wave-cyan')) {
+    const wave = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+    wave.setAttribute('id', 'pattern-wave-cyan');
+    wave.setAttribute('patternUnits', 'userSpaceOnUse');
+    wave.setAttribute('width', '8');
+    wave.setAttribute('height', '8');
+    wave.innerHTML = `
+      <rect width="8" height="8" fill="#22D3EE" fill-opacity="0.15" />
+      <circle cx="4" cy="4" r="1.5" fill="#22D3EE" fill-opacity="0.75" />
+    `;
+    defs.appendChild(wave);
+  }
 }
 
-// 5. Connect to Chrome Extension messaging & storage
+// 6. Connect to Chrome Extension messaging & storage
 function initSidePanelListeners() {
   if (chrome.runtime && chrome.runtime.onMessage) {
     chrome.runtime.onMessage.addListener((message) => {
@@ -251,45 +430,71 @@ function initSidePanelListeners() {
   }
 }
 
+function resolveParcelId(dag) {
+  if (!dag) return state.activeParcelId || DEFAULT_PARCEL_ID;
+  const clean = String(dag).trim();
+  if (clean === '402') return 'par-8f92-bd04-syn';
+  if (clean === '401') return 'BS-401';
+  if (clean === '403') return 'BS-403';
+  return clean;
+}
+
 function applyDetectedContext(ctx) {
   if (!ctx) return;
   state.context = ctx;
 
-  const portalEl = document.getElementById('sp-detected-portal');
+  const isEn = currentLang === 'en';
   const dagEl = document.getElementById('sp-detected-dag');
   const khatianEl = document.getElementById('sp-detected-khatian');
   const mouzaEl = document.getElementById('sp-detected-mouza');
+  const portalEl = document.getElementById('sp-detected-portal');
 
+  if (dagEl) dagEl.textContent = isEn ? (ctx.dag || '402') : toBnDigits(ctx.dag || '৪০২');
+  if (khatianEl) khatianEl.textContent = isEn ? (ctx.khatian || '120') : toBnDigits(ctx.khatian || '১২০');
+  if (mouzaEl) mouzaEl.textContent = ctx.mouza || (isEn ? 'Kashimpur' : 'কাশিমপুর');
   if (portalEl) {
-    portalEl.textContent = ctx.portal === 'e_mutation' ? 'ই-নামজারি' : 'ভূমি কর';
+    portalEl.textContent = isEn
+      ? (ctx.portal === 'e_mutation' ? 'e-Mutation' : 'LD Tax Portal')
+      : (ctx.portal === 'e_mutation' ? 'ই-নামজারি' : 'ভূমি কর পোর্টাল');
   }
-  if (dagEl) dagEl.textContent = (ctx.dag || '৪০২');
-  if (khatianEl) khatianEl.textContent = (ctx.khatian || '১২০');
-  if (mouzaEl) mouzaEl.textContent = (ctx.mouza || 'কাশিমপুর');
 
   const targetId = resolveParcelId(ctx.dag);
   state.activeParcelId = targetId;
   loadPlotData(targetId);
 }
 
-// 6. Fetch Multi-Era Layers and Plot Data from FastAPI
+// 7. Load context & plot data
 async function loadContextAndPlotData() {
-  // Check URL query parameters for standalone preview or automated test
   if (window.location && window.location.search) {
     const params = new URLSearchParams(window.location.search);
+    const langParam = params.get('lang');
+    if (langParam && (langParam === 'en' || langParam === 'bn') && langParam !== currentLang) {
+      currentLang = langParam;
+      const btn = document.getElementById('sp-btn-lang');
+      if (btn) btn.textContent = currentLang === 'bn' ? 'EN' : 'বাং';
+      updateLanguageStrings();
+    }
+
     const dagParam = params.get('dag');
     if (dagParam) {
       state.context.dag = dagParam;
-      if (dagParam === '401') {
-        state.context.khatian = '88';
-      } else if (dagParam === '403') {
-        state.context.khatian = '125';
-      }
+      if (dagParam === '401') state.context.khatian = '88';
+      else if (dagParam === '403') state.context.khatian = '125';
       state.activeParcelId = resolveParcelId(dagParam);
+
+      const isEn = currentLang === 'en';
       const dagEl = document.getElementById('sp-detected-dag');
-      if (dagEl) dagEl.textContent = dagParam;
+      if (dagEl) dagEl.textContent = isEn ? dagParam : toBnDigits(dagParam);
       const khatEl = document.getElementById('sp-detected-khatian');
-      if (khatEl) khatEl.textContent = state.context.khatian;
+      if (khatEl) khatEl.textContent = isEn ? state.context.khatian : toBnDigits(state.context.khatian);
+    }
+
+    const tabParam = params.get('tab');
+    if (tabParam) {
+      setTimeout(() => {
+        const tabBtn = document.querySelector(`.sp-tab-item[data-tab="${tabParam}"]`);
+        if (tabBtn) tabBtn.click();
+      }, 350);
     }
   }
   await loadPlotData(state.activeParcelId);
@@ -301,12 +506,14 @@ async function loadPlotData(parcelId) {
   const loader = document.getElementById('sp-map-loader');
   const loaderText = document.getElementById('sp-map-loader-text');
   const errorEl = document.getElementById('sp-map-error');
-  const errorMsg = document.getElementById('sp-error-message');
 
   if (loader) {
     loader.classList.remove('hidden');
     if (loaderText) {
-      loaderText.textContent = `দাগ ${state.context.dag || '৪০২'} এর ক্যাডাস্ট্রাল স্তর লোড হচ্ছে...`;
+      const isEn = currentLang === 'en';
+      loaderText.textContent = isEn
+        ? `Loading Plot ${state.context.dag || '402'} layers...`
+        : `দাগ ${toBnDigits(state.context.dag || '৪০২')} এর স্তরসমূহ লোড হচ্ছে...`;
     }
   }
   if (errorEl) errorEl.classList.add('hidden');
@@ -327,14 +534,10 @@ async function loadPlotData(parcelId) {
 
     clearTimeout(timeoutId);
 
-    if (reqSeq !== state.currentRequestSeq) {
-      console.log(`[NAKSHA SidePanel] Discarding stale response for request seq #${reqSeq}`);
-      return;
-    }
+    if (reqSeq !== state.currentRequestSeq) return;
 
     if (layersRes.status !== 'fulfilled' || !layersRes.value.ok) {
-      const statusText = layersRes.status === 'fulfilled' ? `HTTP ${layersRes.value.status}` : 'সংযোগ ত্রুটি';
-      throw new Error(`ক্যাডাস্ট্রাল স্তর লোড করা যায়নি (${statusText})।`);
+      throw new Error('Spatial layers unavailable');
     }
 
     const layersData = await layersRes.value.json();
@@ -350,6 +553,7 @@ async function loadPlotData(parcelId) {
     if (neighborsRes.status === 'fulfilled' && neighborsRes.value.ok) {
       neighborsData = await neighborsRes.value.json();
       state.currentNeighbors = neighborsData;
+      renderNeighborOutlines(neighborsData);
     }
 
     let verifData = null;
@@ -368,12 +572,14 @@ async function loadPlotData(parcelId) {
       integData = await integRes.value.json();
     }
 
-    // Render All Modern Components
     renderAllComponents(verifData, layersData, conflictData, neighborsData, ledgerData, integData);
 
     if (loader) loader.classList.add('hidden');
     if (state.map) {
-      setTimeout(() => state.map.invalidateSize(), 60);
+      setTimeout(() => {
+        state.map.invalidateSize();
+        injectSvgMapPatterns();
+      }, 80);
     }
   } catch (err) {
     clearTimeout(timeoutId);
@@ -381,18 +587,11 @@ async function loadPlotData(parcelId) {
 
     console.error('[NAKSHA SidePanel] Fetch failed:', err);
     if (loader) loader.classList.add('hidden');
-    if (errorEl) {
-      errorEl.classList.remove('hidden');
-      if (errorMsg) {
-        errorMsg.textContent = err.name === 'AbortError'
-          ? 'সার্ভার সংযোগে অতিরিক্ত সময় নিচ্ছে (টাইমআউট)।'
-          : (err.message || 'স্প্যাশিয়াল সার্ভার সংযোগ বিচ্ছিন্ন।');
-      }
-    }
+    if (errorEl) errorEl.classList.remove('hidden');
   }
 }
 
-// 7. Render All Modular Components
+// 8. Render All Components
 function renderAllComponents(verifData, layersData, conflictData, neighborsData, ledgerData, integData) {
   const cleanDag = String(state.context.dag || '402');
   const verdict = verifData?.verdict || (cleanDag === '401' ? 'CLEAR' : (cleanDag === '403' ? 'REVIEW' : 'BLOCK'));
@@ -406,39 +605,64 @@ function renderAllComponents(verifData, layersData, conflictData, neighborsData,
 
   // A. VerdictHero
   const vContainer = document.getElementById('sp-verdict-hero-container');
-  let summaryLine = '';
   const chips = [];
 
   if (verdict === 'CLEAR') {
-    summaryLine = isEn ? 'All titles, boundaries & taxes verified with zero discrepancies.' : 'মৌজা কাশিমপুর, দাগ ৪০১ এর সকল রেকর্ড, সীমানা ও কর পরিশোধিত।';
-    chips.push({ label: isEn ? '✓ Title Clean' : '✓ স্বত্ব নির্ভুল', color: 'var(--status-clear)', target: 'rule_area' });
-    chips.push({ label: isEn ? '✓ Tax Paid' : '✓ কর পরিশোধিত', color: 'var(--status-clear)', target: 'tab-tax' });
+    chips.push({ label: isEn ? 'Title clean' : 'স্বত্ব নির্ভুল', color: 'var(--status-clear)', target: 'rule_area' });
+    chips.push({ label: isEn ? 'Tax paid' : 'কর পরিশোধিত', color: 'var(--status-clear)', target: 'tab-tax' });
   } else if (verdict === 'REVIEW') {
-    summaryLine = isEn ? 'Unmutated deed notice & 3 years of land tax in arrears.' : 'নামজারিহীন দলিল ও বিগত ৩ অর্থবছরের ভূমি উন্নয়ন কর বকেয়া।';
-    chips.push({ label: isEn ? '⚠ Unmutated 124d' : '⚠ নামজারিহীন ১২৪ দিন', color: 'var(--status-review)', target: 'rule_mutation' });
-    chips.push({ label: isEn ? '⚠ Arrears × 3 Yrs' : '⚠ বকেয়া কর ৩ অর্থবছর', color: 'var(--status-review)', target: 'tab-tax' });
-    chips.push({ label: isEn ? '⚠ Class Mismatch' : '⚠ শ্রেণি অমিল', color: 'var(--status-review)', target: 'rule_class' });
+    chips.push({ label: isEn ? 'Unmutated 124d' : 'নামজারিহীন ১২৪ দিন', color: 'var(--status-review)', target: 'rule_mutation' });
+    chips.push({ label: isEn ? 'Arrears × 3 Yrs' : 'বকেয়া কর ৩ অর্থবছর', color: 'var(--status-review)', target: 'tab-tax' });
+    chips.push({ label: isEn ? 'Class mismatch' : 'শ্রেণি অমিল', color: 'var(--status-review)', target: 'rule_class' });
   } else {
-    summaryLine = isEn ? '0.90 dec Khas canal encroachment & paper claim exceeds field survey.' : '০.৯০ শতক সরকারি খাস খাল দখল ও ৬.০০ শতক দলিলে অতিরিক্ত দাবি।';
-    chips.push({ label: isEn ? '🚨 Khas Overlap 0.9 dec' : '🚨 সরকারি খাল দখল ০.৯০ শতক', color: 'var(--status-block)', target: 'conflict_zone' });
-    chips.push({ label: isEn ? '🚨 Deficit 0.90 dec' : '🚨 জমির ঘাটতি ০.৯০ শতক', color: 'var(--status-block)', target: 'rule_area' });
-    chips.push({ label: isEn ? '🚨 Mutation On Hold' : '🚨 নামজারি সাময়িক স্থগিত', color: 'var(--status-block)', target: 'rule_mutation' });
+    chips.push({ label: isEn ? 'Khas overlap 0.90 dec' : 'সরকারি খাল দখল ০.৯০ শতক', color: 'var(--status-block)', target: 'conflict_zone' });
+    chips.push({ label: isEn ? 'Area deficit 0.90 dec' : 'জমির ঘাটতি ০.৯০ শতক', color: 'var(--status-block)', target: 'rule_area' });
+    chips.push({ label: isEn ? 'Mutation on hold' : 'নামজারি স্থগিত', color: 'var(--status-block)', target: 'rule_mutation' });
   }
 
   renderVerdictHero(vContainer, {
-    verdict: verdict,
-    summary: summaryLine,
+    verdict,
     hasKhasOverlap,
     hasAreaMismatch,
     hasUnmutated,
     hasClassConflict,
     hasOwnerMismatch,
-    chips: chips,
+    chips,
   }, (targetKey) => {
     handleChipClickHighlight(targetKey);
   });
 
-  // B. AreaChart (Tab 1)
+  // B. Inline Legend directly beneath map
+  const legendContainer = document.getElementById('sp-inline-legend-container');
+  renderInlineLegend(
+    legendContainer,
+    layersData,
+    (layerType, isChecked) => {
+      state.layerVisibility[layerType] = isChecked;
+      const layer = state.layers[layerType];
+      if (layer && state.map) {
+        if (isChecked) state.map.addLayer(layer);
+        else state.map.removeLayer(layer);
+      }
+    },
+    (hoveredType, isHovered) => {
+      Object.entries(state.layers).forEach(([type, layer]) => {
+        if (!layer || !state.layerVisibility[type]) return;
+        if (isHovered) {
+          if (type === hoveredType) {
+            layer.setStyle({ opacity: 1.0, fillOpacity: type === 'conflict_zone' ? 0.95 : 0.45 });
+            if (layer.bringToFront) layer.bringToFront();
+          } else {
+            layer.setStyle({ opacity: 0.3, fillOpacity: 0.08 });
+          }
+        } else {
+          resetLayerStyle(type, layer);
+        }
+      });
+    }
+  );
+
+  // C. AreaChart (Tab 1)
   const chartContainer = document.getElementById('overview-chart-container');
   let deedArea = 6.00;
   let dlrsArea = 5.10;
@@ -455,14 +679,9 @@ function renderAllComponents(verifData, layersData, conflictData, neighborsData,
     conflictArea = 0.0;
   }
 
-  renderAreaChart(chartContainer, {
-    csArea,
-    deedArea,
-    dlrsArea,
-    conflictArea,
-  });
+  renderAreaChart(chartContainer, { csArea, deedArea, dlrsArea, conflictArea });
 
-  // C. RuleGrid (Tab 1)
+  // D. RuleGrid (Tab 1)
   const rulesContainer = document.getElementById('overview-rules-container');
   renderRuleGrid(rulesContainer, {
     hasKhasOverlap,
@@ -470,20 +689,16 @@ function renderAllComponents(verifData, layersData, conflictData, neighborsData,
     hasUnmutated,
     hasClassConflict,
     hasOwnerMismatch,
-    areaDeficit: hasAreaMismatch ? '0.90' : '0.01',
-    unmutatedDays: hasUnmutated ? 124 : 0,
-    ownerScore: hasOwnerMismatch ? 64 : 98,
-    classConflict: hasClassConflict,
   });
 
-  // D. LineageTimeline (Tab 2)
+  // E. LineageTimeline (Tab 2)
   const lineageContainer = document.getElementById('history-lineage-container');
   renderLineageTimeline(lineageContainer, {
     dag: cleanDag,
     nameMatchScore: hasOwnerMismatch ? 64 : 98,
   });
 
-  // E. TaxChart (Tab 3)
+  // F. TaxChart (Tab 3)
   const taxContainer = document.getElementById('tax-chart-container');
   const neighborsList = neighborsData?.features?.map(f => {
     const p = f.properties || {};
@@ -491,7 +706,7 @@ function renderAllComponents(verifData, layersData, conflictData, neighborsData,
       dag: p.dag_number,
       khatian: p.khatian_number,
       owner: p.owner_name,
-      payer: p.dag_number === '403' ? 'অজ্ঞাত করদাতা (Unknown)' : p.owner_name,
+      payer: p.dag_number === '403' ? (isEn ? 'Unknown Payer' : 'অজ্ঞাত করদাতা') : p.owner_name,
       status: p.tax_status,
       area: String(p.area_decimals || '5.0'),
       mismatch: p.dag_number === '403',
@@ -499,13 +714,27 @@ function renderAllComponents(verifData, layersData, conflictData, neighborsData,
   }) || [];
   renderTaxChart(taxContainer, { neighbors: neighborsList });
 
-  // F. LienTimeline (Tab 4)
+  // G. LienTimeline (Tab 4)
   const liensContainer = document.getElementById('liens-timeline-container');
   renderLienTimeline(liensContainer, { liens: [] });
 
-  // G. AuditChain (Tab 5)
+  // H. AuditChain (Tab 5)
   const auditContainer = document.getElementById('audit-chain-container');
   renderAuditChain(auditContainer, ledgerData, integData);
+}
+
+function resetLayerStyle(type, layer) {
+  const cfg = LAYER_CONFIG[type];
+  if (!cfg || !layer) return;
+  layer.setStyle({
+    color: cfg.color,
+    weight: cfg.weight,
+    dashArray: cfg.dashArray,
+    fillColor: cfg.fillColor,
+    fillOpacity: cfg.fillOpacity,
+    opacity: 1.0,
+    stroke: cfg.stroke !== false,
+  });
 }
 
 function reRenderActiveViews() {
@@ -521,29 +750,26 @@ function reRenderActiveViews() {
   }
 }
 
-// 8. Chip Click to Highlight Feature on Map or Open Tab
+// 9. Chip Click to Highlight Feature
 function handleChipClickHighlight(targetKey) {
   if (!targetKey) return;
 
   if (targetKey === 'conflict_zone') {
     if (state.conflictBounds && state.map) {
-      state.map.fitBounds(state.conflictBounds, { padding: [40, 40] });
+      state.map.fitBounds(state.conflictBounds, { padding: [45, 45] });
     }
   } else if (targetKey.startsWith('tab-')) {
-    const tabBtn = document.querySelector(`.sp-tab-btn[data-tab="${targetKey}"]`);
+    const tabBtn = document.querySelector(`.sp-tab-item[data-tab="${targetKey}"]`);
     if (tabBtn) tabBtn.click();
   } else if (targetKey.startsWith('rule_')) {
-    const tabOverviewBtn = document.querySelector('.sp-tab-btn[data-tab="tab-overview"]');
+    const tabOverviewBtn = document.querySelector('.sp-tab-item[data-tab="tab-overview"]');
     if (tabOverviewBtn) tabOverviewBtn.click();
-    const ruleCard = document.querySelector(`.rule-card[data-rule-id="${targetKey}"]`);
-    if (ruleCard) {
-      ruleCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      ruleCard.click();
-    }
+    const ruleCard = document.querySelector(`.rule-fail-card`);
+    if (ruleCard) ruleCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }
 
-// 9. Render Layers on Leaflet Map
+// 10. Render Layers on Leaflet Map
 function renderLayers(layerSnapshots) {
   if (!state.map) return;
 
@@ -553,43 +779,39 @@ function renderLayers(layerSnapshots) {
   state.layers = {};
 
   let boundsToFit = null;
+  const isEn = currentLang === 'en';
 
   layerSnapshots.forEach((snapshot) => {
     const type = snapshot.layer_type;
     const styleCfg = LAYER_CONFIG[type] || {
-      color: '#94a3b8',
-      fillColor: '#94a3b8',
-      weight: 2,
-      fillOpacity: 0.2,
+      color: '#A78BFA',
+      fillColor: '#A78BFA',
+      weight: 1.5,
+      fillOpacity: 0.1,
       name: snapshot.layer_name,
     };
 
     try {
       const isConflict = (type === 'conflict_zone');
+      const isKhas = (type === 'restricted_khas');
+
       const geoLayer = L.geoJSON(snapshot.geometry, {
         style: {
           color: styleCfg.color,
-          weight: isConflict ? 3 : styleCfg.weight,
-          dashArray: styleCfg.dashArray || (isConflict ? '4, 4' : null),
+          weight: styleCfg.weight,
+          dashArray: styleCfg.dashArray,
           fillColor: styleCfg.fillColor,
-          fillOpacity: isConflict ? 0.65 : styleCfg.fillOpacity,
+          fillOpacity: styleCfg.fillOpacity,
+          stroke: styleCfg.stroke !== false,
         },
         onEachFeature: (feature, layer) => {
           if (isConflict) {
-            // Label conflict zone on map directly
-            layer.bindTooltip("0.90 dec overlap", {
+            layer.bindTooltip(isEn ? "0.90 dec overlap" : "০.৯০ শতক দখল", {
               permanent: true,
               direction: 'center',
-              className: 'conflict-hatched-label',
+              className: 'conflict-callout',
             });
           }
-          layer.bindPopup(`
-            <div style="font-family: var(--font-bn); font-size: 11.5px; line-height: 1.4; color: #0B1220;">
-              <strong style="color: ${styleCfg.color}; font-size: 12.5px;">${styleCfg.name}</strong><br/>
-              ${snapshot.properties?.description || ''}<br/>
-              ${snapshot.properties?.area_in_decimals ? `<strong>পরিমাপ:</strong> ${snapshot.properties.area_in_decimals} শতক` : ''}
-            </div>
-          `);
         },
       });
 
@@ -597,6 +819,23 @@ function renderLayers(layerSnapshots) {
         geoLayer.addTo(state.map);
       }
       state.layers[type] = geoLayer;
+
+      // Apply SVG pattern textures after rendering
+      setTimeout(() => {
+        try {
+          if (isConflict) {
+            geoLayer.eachLayer(l => {
+              const el = l.getElement ? l.getElement() : null;
+              if (el) el.setAttribute('fill', 'url(#pattern-hatch-red)');
+            });
+          } else if (isKhas) {
+            geoLayer.eachLayer(l => {
+              const el = l.getElement ? l.getElement() : null;
+              if (el) el.setAttribute('fill', 'url(#pattern-wave-cyan)');
+            });
+          }
+        } catch (e) {}
+      }, 50);
 
       const layerBounds = geoLayer.getBounds();
       if (layerBounds && layerBounds.isValid && layerBounds.isValid()) {
@@ -616,58 +855,43 @@ function renderLayers(layerSnapshots) {
     }
   });
 
+  // Ensure conflict zone is always brought to top
+  if (state.layers['conflict_zone'] && state.layers['conflict_zone'].bringToFront) {
+    state.layers['conflict_zone'].bringToFront();
+  }
+
   if (boundsToFit && state.map) {
     state.map.fitBounds(boundsToFit, { padding: [35, 35] });
   }
 }
 
-// 10. Floating Pill Layer Toggles
-function initLayerPillToggles() {
-  const pills = document.querySelectorAll('.sp-pill-toggle');
-  pills.forEach((pill) => {
-    pill.addEventListener('click', () => {
-      const type = pill.dataset.layerType;
-      const isCurrentlyActive = pill.classList.contains('active');
-      const newActive = !isCurrentlyActive;
-      pill.classList.toggle('active', newActive);
+// 11. Render Neighbor Outlines (Realistic Context with Dag Numbers)
+function renderNeighborOutlines(neighborsGeoJSON) {
+  if (!state.map || !neighborsGeoJSON || !neighborsGeoJSON.features) return;
 
-      state.layerVisibility[type] = newActive;
-      const layer = state.layers[type];
-      if (layer && state.map) {
-        if (newActive) {
-          state.map.addLayer(layer);
-        } else {
-          state.map.removeLayer(layer);
-        }
-      }
+  try {
+    const isEn = currentLang === 'en';
+    const neighborLayer = L.geoJSON(neighborsGeoJSON, {
+      filter: (f) => !f.properties.is_target_parcel,
+      style: {
+        color: '#52525B',
+        weight: 1,
+        dashArray: '2, 4',
+        fill: false,
+      },
+      onEachFeature: (f, layer) => {
+        const p = f.properties || {};
+        const dagNum = isEn ? p.dag_number : toBnDigits(p.dag_number);
+        layer.bindTooltip(`${isEn ? 'Dag' : 'দাগ'} ${dagNum}`, {
+          permanent: true,
+          direction: 'center',
+          className: 'layer-map-label',
+        });
+      },
     });
-  });
-}
 
-// 11. Recenter & Action Buttons
-function setupActionButtons() {
-  const recenterBtn = document.getElementById('sp-btn-recenter');
-  if (recenterBtn) {
-    recenterBtn.addEventListener('click', () => {
-      if (state.targetBounds && state.map) {
-        state.map.fitBounds(state.targetBounds, { padding: [35, 35] });
-      }
-    });
-  }
-
-  const resetBtn = document.getElementById('sp-btn-reset-zoom');
-  if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
-      if (state.map) {
-        state.map.setView([23.98506, 90.35035], 19);
-      }
-    });
-  }
-
-  const retryBtn = document.getElementById('sp-retry-btn');
-  if (retryBtn) {
-    retryBtn.addEventListener('click', () => {
-      loadPlotData(state.activeParcelId);
-    });
+    neighborLayer.addTo(state.map);
+  } catch (e) {
+    console.warn('[NAKSHA SidePanel] Error rendering neighbor outlines:', e);
   }
 }
