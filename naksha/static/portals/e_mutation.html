@@ -165,12 +165,30 @@
 </head>
 <body>
     <!-- Safety Notice -->
-    <div class="demo-warning-banner">
-        ⚠️ কৃত্রিম ডেমো পোর্টাল — এটি কেবল নকশা (NAKSHA) হ্যাকাথন প্রদর্শনের জন্য প্রস্তুতকৃত। কোনো সরকারি ওয়েবসাইট বা সার্ভারের সাথে যুক্ত নয়।
+    <div class="demo-warning-banner" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; padding: 0.4rem 1.25rem;">
+        <div>
+            ⚠️ কৃত্রিম ডেমো পোর্টাল — এটি কেবল নকশা (NAKSHA) হ্যাকাথন প্রদর্শনের জন্য প্রস্তুতকৃত। কোনো সরকারি ওয়েবসাইট বা সার্ভারের সাথে যুক্ত নয়।
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; background: rgba(0,0,0,0.06); padding: 0.2rem 0.5rem; border-radius: 4px;">
+            <label for="demo-officer-select" style="font-weight: 700; color: #78350f;">Demo: officer</label>
+            <select id="demo-officer-select" onchange="switchOfficer(this.value)" style="font-size: 0.78rem; font-family: var(--font-bangla); border: 1px solid #d97706; border-radius: 4px; padding: 2px 6px; background: #fff; cursor: pointer;">
+                <option value="AC-2024-GZP" selected>AC-2024-GZP (তানিয়া সুলতানা - এসি ল্যান্ড)</option>
+                <option value="UL-2024-KSH">UL-2024-KSH (মোঃ ফজলুর রহমান - তহশিলদার)</option>
+                <option value="KN-2024-KSH">KN-2024-KSH (মোঃ রফিকুল ইসলাম - কানুনগো)</option>
+                <option value="EXT-999-HACK">EXT-999-HACK (অজ্ঞাত ব্যক্তি - অননুমোদিত/বাতিল)</option>
+            </select>
+        </div>
     </div>
 
     <!-- Portal Header -->
-    <header class="portal-header">
+    <header class="portal-header"
+            id="portal-officer-header"
+            data-portal-name="ই-নামজারি ও মিউটেশন ব্যবস্থাপনা সিস্টেম"
+            data-officer-id="AC-2024-GZP"
+            data-officer-name="তানিয়া সুলতানা"
+            data-officer-role="ac_land"
+            data-officer-designation="সহকারী কমিশনার (ভূমি)"
+            data-officer-office="গাজীপুর সদর">
         <div class="portal-brand">
             <div class="govt-logo">নামজারি</div>
             <div>
@@ -179,8 +197,8 @@
             </div>
         </div>
         <div class="officer-session">
-            <div>সহকারী কমিশনার (ভূমি) · সদর উপজেলা</div>
-            <div class="session-badge">অফিসার আইডি: ACL-GZ-04</div>
+            <div id="disp-officer-title">সহকারী কমিশনার (ভূমি) · সদর উপজেলা</div>
+            <div class="session-badge" id="disp-officer-badge">অফিসার আইডি: AC-2024-GZP</div>
         </div>
     </header>
 
@@ -274,6 +292,61 @@
 
             window.dispatchEvent(new CustomEvent('naksha:plotChanged', {
                 detail: { dag, khatian, caseId, deedNo, owner, area }
+            }));
+        }
+
+        const OFFICERS = {
+            'AC-2024-GZP': {
+                id: 'AC-2024-GZP',
+                name: 'তানিয়া সুলতানা',
+                role: 'ac_land',
+                designation: 'সহকারী কমিশনার (ভূমি)',
+                office: 'গাজীপুর সদর',
+                title: 'সহকারী কমিশনার (ভূমি) · সদর উপজেলা',
+            },
+            'UL-2024-KSH': {
+                id: 'UL-2024-KSH',
+                name: 'মোঃ ফজলুর রহমান',
+                role: 'union_land_officer',
+                designation: 'ইউনিয়ন ভূমি সহকারী কর্মকর্তা',
+                office: 'কাশিমপুর, গাজীপুর সদর',
+                title: 'ইউনিয়ন ভূমি সহকারী কর্মকর্তা · কাশিমপুর',
+            },
+            'KN-2024-KSH': {
+                id: 'KN-2024-KSH',
+                name: 'মোঃ রফিকুল ইসলাম',
+                role: 'kanungo',
+                designation: 'কানুনগো',
+                office: 'কাশিমপুর, গাজীপুর সদর',
+                title: 'কানুনগো · কাশিমপুর',
+            },
+            'EXT-999-HACK': {
+                id: 'EXT-999-HACK',
+                name: 'অজ্ঞাত ব্যবহারকারী',
+                role: 'unauthorized',
+                designation: 'অননুমোদিত বহিরাগত ব্যক্তি',
+                office: 'অননুমোদিত নেটওয়ার্ক',
+                title: 'অননুমোদিত বহিরাগত ব্যক্তি',
+            }
+        };
+
+        function switchOfficer(officerId) {
+            const officer = OFFICERS[officerId] || OFFICERS['AC-2024-GZP'];
+            const header = document.getElementById('portal-officer-header');
+            if (header) {
+                header.setAttribute('data-officer-id', officer.id);
+                header.setAttribute('data-officer-name', officer.name);
+                header.setAttribute('data-officer-role', officer.role);
+                header.setAttribute('data-officer-designation', officer.designation);
+                header.setAttribute('data-officer-office', officer.office);
+            }
+            const dispTitle = document.getElementById('disp-officer-title');
+            if (dispTitle) dispTitle.textContent = officer.title;
+            const dispBadge = document.getElementById('disp-officer-badge');
+            if (dispBadge) dispBadge.textContent = 'অফিসার আইডি: ' + officer.id;
+
+            window.dispatchEvent(new CustomEvent('naksha:officerChanged', {
+                detail: officer
             }));
         }
     </script>

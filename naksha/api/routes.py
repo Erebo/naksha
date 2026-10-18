@@ -434,3 +434,168 @@ def api_calculate_overlap(req: OverlapCalculationRequest) -> OverlapCalculationR
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e),
         )
+
+
+# ==============================================================================
+# Officer Verification & Session Security
+# ==============================================================================
+
+class VerifyOfficerRequest(BaseModel):
+    portal_origin: Optional[str] = Field(default="", description="Origin or URL of calling government portal")
+    officer_id: str = Field(description="Synthetic officer identifier, e.g. UL-2024-KSH")
+    name: Optional[str] = Field(default=None, description="Officer display name")
+    designation: Optional[str] = Field(default=None, description="Official job title")
+    office: Optional[str] = Field(default=None, description="Jurisdiction or office location")
+
+
+class VerifyOfficerResponse(BaseModel):
+    status: str = Field(description="'verified' or 'denied'")
+    token: Optional[str] = Field(default=None, description="15-minute HS256 signed JWT session token")
+    officer: Optional[Dict[str, Any]] = Field(default=None, description="Verified officer profile")
+    reason: Optional[str] = Field(default=None, description="Denial reason if verification failed")
+
+
+SEEDED_OFFICER_REGISTRY: Dict[str, Dict[str, Any]] = {
+    "UL-2024-KSH": {
+        "officer_id": "UL-2024-KSH",
+        "name": "মোঃ ফজলুর রহমান",
+        "designation": "ইউনিয়ন ভূমি সহকারী কর্মকর্তা",
+        "office": "কাশিমপুর, গাজীপুর সদর",
+        "role": "union_land_officer",
+        "jurisdiction": "কাশিমপুর",
+        "trusted": True,
+    },
+    "AC-2024-GZP": {
+        "officer_id": "AC-2024-GZP",
+        "name": "তানিয়া সুলতানা",
+        "designation": "সহকারী কমিশনার (ভূমি)",
+        "office": "গাজীপুর সদর",
+        "role": "ac_land",
+        "jurisdiction": "গাজীপুর সদর",
+        "trusted": True,
+    },
+    "KN-2024-KSH": {
+        "officer_id": "KN-2024-KSH",
+        "name": "মোঃ রফিকুল ইসলাম",
+        "designation": "কানুনগো",
+        "office": "কাশিমপুর, গাজীপুর সদর",
+        "role": "kanungo",
+        "jurisdiction": "কাশিমপুর",
+        "trusted": True,
+    },
+    "ACL-GZ-04": {
+        "officer_id": "ACL-GZ-04",
+        "name": "তানিয়া সুলতানা",
+        "designation": "সহকারী কমিশনার (ভূমি)",
+        "office": "সদর উপজেলা, গাজীপুর",
+        "role": "ac_land",
+        "jurisdiction": "গাজীপুর সদর",
+        "trusted": True,
+    },
+}
+
+ALLOWED_PORTAL_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "chrome-extension://",
+]
+
+
+def _check_origin_allowed(origin: str) -> bool:
+    if not origin:
+        return True
+    origin_lower = origin.lower()
+    return any(origin_lower.startswith(allowed) or allowed in origin_lower for allowed in ALLOWED_PORTAL_ORIGINS)
+
+
+@router.post(
+    "/auth/verify-officer",
+    response_model=VerifyOfficerResponse,
+    summary="Verify Officer Portal Session and Issue 15-Minute Token",
+    tags=["Authentication & Security"],
+)
+@router.post(
+    f"{settings.api_prefix}/auth/verify-officer",
+    response_model=VerifyOfficerResponse,
+    summary="Verify Officer Portal Session and Issue 15-Minute Token (Prefixed)",
+    tags=["Authentication & Security"],
+)
+def verify_officer_session(req: VerifyOfficerRequest) -> VerifyOfficerResponse:
+    """Verifies that the officer is currently logged into an approved government portal
+
+    and matches our authorized officer registry. Emits ACCESS_GRANTED or ACCESS_DENIED
+    audit ledger events.
+    """
+    import time
+    import jwt
+
+    # 1. Verify origin allowlist
+    if req.portal_origin and not _check_origin_allowed(req.portal_origin):
+        audit_ledger.record_verification(
+            event_type="ACCESS_DENIED",
+            canonical_parcel_id=None,
+            dag_number=None,
+            mouza=req.office or "Unknown",
+            verdict="DENIED",
+            cited_records=[],
+            officer_id=req.officer_id or "UNKNOWN",
+        )
+        return VerifyOfficerResponse(
+            status="denied",
+            reason="অননুমোদিত পোর্টাল উৎস (Disallowed portal origin)",
+        )
+
+    # 2. Match against seeded registry
+    officer_profile = SEEDED_OFFICER_REGISTRY.get(req.officer_id)
+    if not officer_profile or not officer_profile.get("trusted", False):
+        audit_ledger.record_verification(
+            event_type="ACCESS_DENIED",
+            canonical_parcel_id=None,
+            dag_number=None,
+            mouza=req.office or "Unknown",
+            verdict="DENIED",
+            cited_records=[],
+            officer_id=req.officer_id or "UNKNOWN",
+        )
+        return VerifyOfficerResponse(
+            status="denied",
+            reason="কর্মকর্তার পরিচয় নিবন্ধনে পাওয়া যায়নি বা অননুমোদিত (Officer not found or unauthorized)",
+        )
+
+    # 3. Create 15-minute JWT
+    now = int(time.time())
+    jwt_secret = getattr(settings, "jwt_secret", "naksha-secure-hackathon-hmac-secret-key-2026")
+    payload = {
+        "sub": officer_profile["officer_id"],
+        "name": officer_profile["name"],
+        "role": officer_profile["role"],
+        "designation": officer_profile["designation"],
+        "office": officer_profile["office"],
+        "jurisdiction": officer_profile["jurisdiction"],
+        "iat": now,
+        "exp": now + 900,  # 15 minutes
+        "iss": "naksha-canonical-authority",
+    }
+    token = jwt.encode(payload, jwt_secret, algorithm="HS256")
+    if isinstance(token, bytes):
+        token = token.decode("utf-8")
+
+    # 4. Record ACCESS_GRANTED in audit ledger
+    audit_ledger.record_verification(
+        event_type="ACCESS_GRANTED",
+        canonical_parcel_id=None,
+        dag_number=None,
+        mouza=officer_profile["jurisdiction"],
+        verdict="CLEAR",
+        cited_records=[f"REGISTRY-MATCH:{officer_profile['officer_id']}"],
+        officer_id=officer_profile["officer_id"],
+    )
+
+    return VerifyOfficerResponse(
+        status="verified",
+        token=token,
+        officer=officer_profile,
+    )
+

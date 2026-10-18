@@ -9,16 +9,20 @@
 
   console.log('[NAKSHA Content Script] Loaded on mock land portal.');
 
-  // Extract identifiers from DOM element #naksha-portal-context
+  // Extract identifiers and officer identity from DOM
   function extractPortalContext() {
     const contextEl = document.getElementById('naksha-portal-context');
     if (!contextEl) {
       return null;
     }
 
+    const officerEl = document.getElementById('portal-officer-header');
+    const officerData = officerEl ? officerEl.dataset : {};
+
     const dataset = contextEl.dataset;
     return {
       portal: dataset.portal || 'mock_portal',
+      portalName: officerData.portalName || (dataset.portal === 'e_mutation' ? 'ই-নামজারি ও মিউটেশন ব্যবস্থাপনা সিস্টেম' : 'ভূমি উন্নয়ন কর ব্যবস্থাপনা সিস্টেম (LD Tax)'),
       mouza: dataset.mouza || 'কাশিমপুর',
       jl: dataset.jl || '২৮',
       upazila: dataset.upazila || 'গাজীপুর সদর',
@@ -31,8 +35,14 @@
       owner: dataset.owner || '',
       area: dataset.area || '',
       taxStatus: dataset.taxStatus || '',
+      officerId: officerData.officerId || 'UL-2024-KSH',
+      officerName: officerData.officerName || 'মোঃ ফজলুর রহমান',
+      officerRole: officerData.officerRole || 'union_land_officer',
+      officerDesignation: officerData.officerDesignation || 'ইউনিয়ন ভূমি সহকারী কর্মকর্তা',
+      officerOffice: officerData.officerOffice || 'কাশিমপুর, গাজীপুর সদর',
       timestamp: Date.now(),
       url: window.location.href,
+      origin: window.location.origin,
     };
   }
 
@@ -70,7 +80,7 @@
           <span class="naksha-pill-title">প্লট শনাক্ত: দাগ <strong id="naksha-pill-dag">${context.dag}</strong></span>
           <span class="naksha-pill-sub">মৌজা ${context.mouza} · ২ডি জিআইএস সমন্বয়</span>
         </div>
-        <button id="naksha-pill-open-btn" class="naksha-pill-btn" type="button">ম্যাপ দেখুন</button>
+        <button id="naksha-pill-open-btn" class="naksha-pill-btn" type="button">যাচাই করুন</button>
       </div>
     `;
 
@@ -78,7 +88,7 @@
 
     const openBtn = pill.querySelector('#naksha-pill-open-btn');
     openBtn.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ type: 'NAKSHA_OPEN_SIDEPANEL' }, (res) => {
+      chrome.runtime.sendMessage({ type: 'NAKSHA_OPEN_SIDEPANEL', payload: extractPortalContext() }, (res) => {
         if (chrome.runtime.lastError || !res || res.status !== 'opened') {
           // If browser requires user action on extension toolbar directly, show clear Bangla guidance
           showPanelGuideToast();
@@ -159,4 +169,14 @@
       updateFloatingBadgeText(updated);
     }
   });
+
+  // Listen for dynamic officer switching events on the mock portal
+  window.addEventListener('naksha:officerChanged', (event) => {
+    console.log('[NAKSHA Content Script] Custom event naksha:officerChanged caught:', event.detail);
+    const updated = extractPortalContext();
+    if (updated) {
+      notifyExtension(updated, 'NAKSHA_OFFICER_CHANGED');
+    }
+  });
 })();
+

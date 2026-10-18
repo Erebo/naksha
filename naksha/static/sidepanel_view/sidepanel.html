@@ -17,15 +17,73 @@
   <link rel="stylesheet" href="sidepanel.css">
 </head>
 <body>
+  <!-- 0. Automated Officer Verification Screen (Appears before Cockpit) -->
+  <div id="sp-verification-screen" class="sp-verification-overlay">
+    <div class="sp-verify-card">
+      <div class="sp-verify-brand">
+        <span class="sp-verify-logo">নকশা</span>
+        <span class="sp-verify-sub">স্বয়ংক্রিয় প্রাতিষ্ঠানিক নিরাপত্তা যাচাই</span>
+      </div>
+
+      <!-- Identity Card -->
+      <div class="sp-identity-card">
+        <div class="sp-identity-head">
+          <span class="sp-identity-badge" id="sp-v-tag">পোর্টাল সেশন থেকে সংগৃহীত</span>
+          <span class="sp-identity-portal" id="sp-v-portal-name">ভূমি উন্নয়ন কর ব্যবস্থাপনা</span>
+        </div>
+        <div class="sp-identity-body">
+          <div class="sp-identity-row">
+            <span class="sp-id-label" id="sp-lbl-v-name">কর্মকর্তার নাম</span>
+            <span class="sp-id-val" id="sp-v-officer-name">মোঃ ফজলুর রহমান</span>
+          </div>
+          <div class="sp-identity-row">
+            <span class="sp-id-label" id="sp-lbl-v-id">অফিসার আইডি</span>
+            <span class="sp-id-val num" id="sp-v-officer-id">UL-2024-KSH</span>
+          </div>
+          <div class="sp-identity-row">
+            <span class="sp-id-label" id="sp-lbl-v-title">পদবী</span>
+            <span class="sp-id-val" id="sp-v-officer-title">ইউনিয়ন ভূমি সহকারী কর্মকর্তা</span>
+          </div>
+          <div class="sp-identity-row">
+            <span class="sp-id-label" id="sp-lbl-v-office">কর্মস্থল / দপ্তর</span>
+            <span class="sp-id-val" id="sp-v-officer-office">কাশিমপুর, গাজীপুর সদর</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Automated Checks Step List -->
+      <div class="sp-checks-list">
+        <div class="sp-check-item" id="sp-chk-portal">
+          <span class="sp-chk-icon"><span class="sp-spinner"></span></span>
+          <span class="sp-chk-text" id="sp-txt-chk-portal">অনুমোদিত সরকারি পোর্টাল যাচাই</span>
+        </div>
+        <div class="sp-check-item" id="sp-chk-session">
+          <span class="sp-chk-icon"><span class="sp-chk-pending"></span></span>
+          <span class="sp-chk-text" id="sp-txt-chk-session">সক্রিয় পোর্টাল লগইন শনাক্তকরণ</span>
+        </div>
+        <div class="sp-check-item" id="sp-chk-registry">
+          <span class="sp-chk-icon"><span class="sp-chk-pending"></span></span>
+          <span class="sp-chk-text" id="sp-txt-chk-registry">কর্মকর্তার পরিচিতি ও পদবী যাচাই</span>
+        </div>
+      </div>
+
+      <!-- Result Banner (Success / Denied) -->
+      <div class="sp-verify-result" id="sp-verify-result" style="display: none;">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </div>
+
   <!-- 1. Slim 40px Top Bar (Height Budget <= 40px) -->
   <header class="sp-topbar">
     <div class="sp-topbar-left">
       <span class="sp-brand-logo">নকশা</span>
-      <span class="sp-officer-chip" id="sp-role-chip" title="ক্যাডাস্ট্রাল জিআইএস">এসি ল্যান্ড</span>
+      <span class="sp-officer-chip" id="sp-role-chip" title="ক্যাডাস্ট্রাল জিআইএস">তহশিলদার</span>
+      <span class="sp-verified-chip num" id="sp-verified-badge" title="অনুমোদিত অফিসার যাচাইকৃত">Verified: UL-2024-KSH</span>
       <span class="sp-demo-pill" id="sp-demo-pill" title="কৃত্রিম ডেমো ডেটা — কোনো বাস্তব সরকারি রেকর্ডের সাথে সম্পর্কযুক্ত নয়">ডেমো</span>
     </div>
     <div class="sp-topbar-right">
-      <span class="sp-timer num" id="sp-session-timer">⏱ 04:18</span>
+      <span class="sp-timer num" id="sp-session-timer">⏱ 15:00</span>
       <button class="sp-icon-btn" id="sp-btn-theme" title="থিম পরিবর্তন / Toggle Theme">
         <span id="sp-theme-icon">☀️</span>
       </button>
