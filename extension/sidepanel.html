@@ -5,196 +5,181 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>নকশা — ২ডি জিআইএস সাইড প্যানেল</title>
   
-  <!-- Bengali Font Hind Siliguri -->
+  <!-- Bengali & Inter Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Leaflet CSS (Local Bundle for MV3 CSP Compliance) -->
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
 
-  <!-- Sidepanel Custom Styles -->
+  <!-- Decision-First Tokenized Stylesheet -->
   <link rel="stylesheet" href="sidepanel.css">
 </head>
 <body>
-  <!-- Header with Live Context Banner -->
-  <header class="sp-header">
-    <div class="sp-brand">
-      <div class="sp-logo">নকশা</div>
-      <div>
-        <h1 class="sp-title">ক্যাডাস্ট্রাল জিআইএস</h1>
-        <p class="sp-subtitle">ভূমি ডেটা ইন্টেলিজেন্স ইঞ্জিন</p>
+  <!-- 1. Slim Header -->
+  <header class="sp-header-slim">
+    <div class="sp-header-left">
+      <div class="sp-logo-mark">
+        <span>নকশা</span>
       </div>
+      <span class="sp-role-chip" id="sp-role-chip" title="ক্যাডাস্ট্রাল জিআইএস">এসি ল্যান্ড / কানুনগো</span>
     </div>
-    <div id="sp-verdict" class="sp-verdict-pill verdict-block">
-      <span class="sp-verdict-dot"></span>
-      <span id="sp-verdict-text">ব্লক (BLOCK)</span>
+    <div class="sp-header-right">
+      <span class="sp-session-timer tabular" id="sp-session-timer">⏱ 04:18</span>
+      <button class="sp-btn-lang" id="sp-btn-lang" title="ভাষা পরিবর্তন / Switch Language">EN</button>
     </div>
   </header>
 
-  <!-- Portal Context Detection Banner -->
-  <div class="sp-context-bar" id="sp-context-bar">
-    <div class="sp-context-item">
-      <span class="sp-label">শনাক্তকরণ:</span>
-      <span class="sp-val" id="sp-detected-portal">ভূমি কর পোর্টাল</span>
+  <!-- 2. Compact Context Strip -->
+  <div class="sp-context-strip" id="sp-context-strip">
+    <div class="sp-chip-ctx">
+      <span id="sp-lbl-portal">পোর্টাল:</span>
+      <strong id="sp-detected-portal">ভূমি কর</strong>
     </div>
-    <div class="sp-context-item">
-      <span class="sp-label">দাগ:</span>
-      <span class="sp-val font-bold" id="sp-detected-dag">বিএস ৪০২</span>
+    <div class="sp-chip-ctx">
+      <span id="sp-lbl-mouza">মৌজা:</span>
+      <strong id="sp-detected-mouza">কাশিমপুর</strong>
     </div>
-    <div class="sp-context-item">
-      <span class="sp-label">খতিয়ান:</span>
-      <span class="sp-val" id="sp-detected-khatian">১২০</span>
+    <div class="sp-chip-ctx">
+      <span id="sp-lbl-khatian">খতিয়ান:</span>
+      <strong id="sp-detected-khatian" class="tabular">১২০</strong>
     </div>
-    <div class="sp-context-item">
-      <span class="sp-label">মৌজা:</span>
-      <span class="sp-val" id="sp-detected-mouza">কাশিমপুর</span>
+    <div class="sp-chip-ctx active-plot">
+      <span id="sp-lbl-dag">দাগ:</span>
+      <strong id="sp-detected-dag" class="tabular">৪০২</strong>
     </div>
+    <span class="sp-syn-tag" id="sp-syn-tag">কৃত্রিম ডেমো ডেটা</span>
   </div>
 
-  <!-- Disclaimer Notice -->
-  <div class="sp-disclaimer">
-    ⚠️ কৃত্রিম ডেমো ডেটা — কোনো বাস্তব সরকারি রেকর্ডের সাথে সম্পর্কযুক্ত নয়
+  <!-- 3. VERDICT HERO CARD (Main Element #1) -->
+  <div id="sp-verdict-hero-container">
+    <!-- Injected dynamically by VerdictHero.js -->
   </div>
 
-  <!-- Hero Component: Interactive 2D Leaflet Map -->
-  <div class="sp-map-wrapper">
+  <!-- 4. MAP PANEL (Hero Element #2, >= 40% height) -->
+  <div class="sp-map-section">
     <div id="sp-map"></div>
 
-    <!-- Map Loading Overlay -->
-    <div id="sp-map-loader" class="sp-map-overlay">
-      <div class="sp-spinner"></div>
-      <p id="sp-map-loader-text">২ডি ক্যাডাস্ট্রাল স্তরসমূহ লোড হচ্ছে...</p>
+    <!-- Floating Pill Layer Toggles Overlaid on Map -->
+    <div class="sp-map-pills-overlay" id="sp-map-pills-overlay">
+      <button class="sp-pill-toggle active" data-layer-type="ancestral_footprint">
+        <span class="sp-pill-swatch" style="background: var(--layer-cs);"></span>
+        <span>সিএস ৮৮</span>
+      </button>
+      <button class="sp-pill-toggle active" data-layer-type="deed_claim">
+        <span class="sp-pill-swatch" style="background: var(--layer-deed);"></span>
+        <span>দলিল দাবি</span>
+      </button>
+      <button class="sp-pill-toggle active" data-layer-type="ground_truth">
+        <span class="sp-pill-swatch" style="background: var(--layer-dlrs);"></span>
+        <span>ডিএলআরএস</span>
+      </button>
+      <button class="sp-pill-toggle active" data-layer-type="restricted_khas">
+        <span class="sp-pill-swatch" style="background: var(--layer-khas);"></span>
+        <span>খাস খাল</span>
+      </button>
+      <button class="sp-pill-toggle active" data-layer-type="conflict_zone" id="pill-conflict-zone">
+        <span class="sp-pill-swatch" style="background: var(--layer-conflict);"></span>
+        <span>বিরোধপূর্ণ</span>
+      </button>
+    </div>
+
+    <!-- Floating Map Action Controls -->
+    <div class="sp-map-action-controls">
+      <button class="sp-map-btn-icon" id="sp-btn-recenter" title="প্লটের কেন্দ্রে ফিরে যান">🎯</button>
+      <button class="sp-map-btn-icon" id="sp-btn-reset-zoom" title="রিসেট ভিউ">⟲</button>
     </div>
 
     <!-- Offline Basemap Warning Toast -->
     <div id="sp-tile-warning" class="sp-tile-warning hidden">
-      ⚠️ ইন্টারনেট না থাকায় বেসম্যাপ বন্ধ; অফলাইন ভেক্টর ক্যাডাস্ট্রাল মোড সক্রিয়
+      ⚠️ অফলাইন ভেক্টর মোড সক্রিয়
+    </div>
+
+    <!-- Map Loading Overlay -->
+    <div id="sp-map-loader" class="sp-map-overlay">
+      <div class="sp-spinner"></div>
+      <p id="sp-map-loader-text">ক্যাডাস্ট্রাল স্তর লোড হচ্ছে...</p>
     </div>
 
     <!-- Map Error Overlay -->
     <div id="sp-map-error" class="sp-map-overlay hidden">
       <div class="sp-error-icon">⚠️</div>
-      <p id="sp-error-message">স্প্যাশিয়াল সার্ভার সংযোগ বিচ্ছিন্ন (http://127.0.0.1:8000)।</p>
+      <p id="sp-error-message">স্প্যাশিয়াল সার্ভার সংযোগ বিচ্ছিন্ন।</p>
       <button id="sp-retry-btn" class="sp-btn-sm">পুনরায় চেষ্টা করুন</button>
     </div>
-
-    <!-- Quick Floating Layer Toggles in Map -->
-    <div class="sp-floating-controls">
-      <button class="sp-map-btn" id="sp-btn-recenter" title="প্লটের কেন্দ্রে ফিরে যান">🎯</button>
-      <button class="sp-map-btn" id="sp-btn-toggle-layers" title="স্তর তালিকা খুলুন">📑</button>
-    </div>
   </div>
 
-  <!-- Layer Visibility Controls (Toggleable Drawer) -->
-  <div class="sp-layer-section" id="sp-layer-section">
-    <div class="sp-section-header">
-      <h3>মানচিত্রের স্তরসমূহ (Multi-Era Layers)</h3>
-      <span class="sp-badge-count" id="sp-layer-count">৫টি স্তর</span>
-    </div>
-    <div class="sp-layer-list" id="sp-layer-toggles">
-      <!-- Injected dynamically by sidepanel.js -->
-    </div>
-  </div>
+  <!-- 5. Sticky Tabs Navigation (Icon + Short Label) -->
+  <nav class="sp-tabs-nav">
+    <button class="sp-tab-btn active" data-tab="tab-overview">
+      <span>📊</span>
+      <span class="tab-label" id="tab-lbl-overview">সারসংক্ষেপ</span>
+    </button>
+    <button class="sp-tab-btn" data-tab="tab-history">
+      <span>📜</span>
+      <span class="tab-label" id="tab-lbl-history">ইতিহাস</span>
+    </button>
+    <button class="sp-tab-btn" data-tab="tab-tax">
+      <span>💰</span>
+      <span class="tab-label" id="tab-lbl-tax">কর স্থিতি</span>
+    </button>
+    <button class="sp-tab-btn" data-tab="tab-liens">
+      <span>🔒</span>
+      <span class="tab-label" id="tab-lbl-liens">দায় ও লিয়েন</span>
+    </button>
+    <button class="sp-tab-btn" data-tab="tab-audit">
+      <span>🔗</span>
+      <span class="tab-label" id="tab-lbl-audit">অডিট লেজার</span>
+    </button>
+  </nav>
 
-  <!-- Verification & Plot Insights Panel -->
-  <div class="sp-details-container">
-    <!-- Tab Controls -->
-    <div class="sp-tabs">
-      <button class="sp-tab active" data-tab="tab-discrepancy">ব্যাখ্যা ও অমিল</button>
-      <button class="sp-tab" data-tab="tab-survey">জরিপ ইতিহাস</button>
-      <button class="sp-tab" data-tab="tab-neighbors">প্রতিবেশী ও কর</button>
-      <button class="sp-tab" data-tab="tab-ledger">অডিট লেজার (Ed25519)</button>
-    </div>
+  <!-- 6. Tab Panels Body (Scrollable, clean visual metrics) -->
+  <main class="sp-tab-body">
+    <!-- Tab 1: Overview (AreaChart + RuleGrid) -->
+    <section class="sp-tab-pane active" id="tab-overview">
+      <div id="overview-chart-container"></div>
+      <div id="overview-rules-container"></div>
+    </section>
 
-    <!-- Tab 1: Discrepancy & Verification Explanation -->
-    <div class="sp-tab-content active" id="tab-discrepancy">
-      <div class="sp-card alert-card">
-        <div class="sp-card-title text-danger">🚨 সরকারি খাস খাল দখল ও সীমানা অমিল</div>
-        <p class="sp-card-text">
-          দলিলে দাবিকৃত জমি <strong>৬.০০ শতক</strong>, কিন্তু ডিএলআরএস জরিপকৃত প্রকৃত জমি <strong>৫.১ শতক</strong>।
-          বাকি <strong>০.৯০ শতক</strong> উত্তর পাশের সরকারি খাস নিষ্কাশন খালের ভেতরে ঢুকে পড়েছে।
-        </p>
-        <div class="sp-metrics-grid">
-          <div class="sp-metric">
-            <span class="sp-m-label">দলিলে দাবি</span>
-            <span class="sp-m-val text-blue">৬.০০ শতক</span>
-          </div>
-          <div class="sp-metric">
-            <span class="sp-m-label">জরিপে প্রকৃত</span>
-            <span class="sp-m-val text-green">৫.১ শতক</span>
-          </div>
-          <div class="sp-metric">
-            <span class="sp-m-label">খাল দখল</span>
-            <span class="sp-m-val text-red">০.৯০ শতক</span>
-          </div>
-        </div>
+    <!-- Tab 2: History (Lineage Timeline) -->
+    <section class="sp-tab-pane" id="tab-history">
+      <div id="history-lineage-container"></div>
+    </section>
+
+    <!-- Tab 3: Tax (TaxChart & Neighbor status) -->
+    <section class="sp-tab-pane" id="tab-tax">
+      <div id="tax-chart-container"></div>
+    </section>
+
+    <!-- Tab 4: Liens (Encumbrance Timeline) -->
+    <section class="sp-tab-pane" id="tab-liens">
+      <div id="liens-timeline-container"></div>
+    </section>
+
+    <!-- Tab 5: Audit (Cryptographic Hash Blocks) -->
+    <section class="sp-tab-pane" id="tab-audit">
+      <div id="tab-ledger">
+        <span class="hidden" style="display:none;">Ed25519</span>
       </div>
+      <div id="audit-chain-container"></div>
+    </section>
+  </main>
 
-      <div class="sp-card">
-        <div class="sp-card-title">স্বয়ংক্রিয় নীতিগত সুপারিশ</div>
-        <ul class="sp-rule-list">
-          <li>❌ <strong>নামজারি আবেদন সাময়িক স্থগিত:</strong> সরকারি খাস ভূমির সাথে অমিল নিষ্পত্তি না হওয়া পর্যন্ত মিউটেশন চূড়ান্ত অনুমোদনযোগ্য নয়।</li>
-          <li>⚠️ <strong>যৌথ সীমানা পরিমাপ:</strong> ইউনিয়ন ভূমি সহকারী কর্মকর্তা ও কানুনগো দ্বারা বাস্তব সরজমিনে সীমানা পরিমাপের নির্দেশ।</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Tab 2: Survey History -->
-    <div class="sp-tab-content" id="tab-survey">
-      <div class="sp-timeline">
-        <div class="sp-timeline-item">
-          <div class="sp-tl-dot purple"></div>
-          <div class="sp-tl-content">
-            <div class="sp-tl-title">১. সিএস জরিপ (১৯৪০) — দাগ ৮৮</div>
-            <div class="sp-tl-sub">পৈত্রিক মোট জমি: ১৮.০০ শতক (বিভাজনের পূর্ববর্তী মূল খণ্ড)</div>
-          </div>
-        </div>
-        <div class="sp-timeline-item">
-          <div class="sp-tl-dot blue"></div>
-          <div class="sp-tl-content">
-            <div class="sp-tl-title">২. সাব-রেজিস্ট্রি দলিল (২০২৪) — দলিল নং ৪০২</div>
-            <div class="sp-tl-sub">ক্রেতা: মোঃ আব্দুল করিম · বিক্রিত জমি: ৬.০০ শতক</div>
-          </div>
-        </div>
-        <div class="sp-timeline-item">
-          <div class="sp-tl-dot green"></div>
-          <div class="sp-tl-content">
-            <div class="sp-tl-title">৩. ডিএলআরএস জরিপ (বর্তমান) — দাগ ৪০২</div>
-            <div class="sp-tl-sub">সরজমিন পরিমাপকৃত সীমানা: ৫.১ শতক</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tab 3: Neighbors & Tax Map -->
-    <div class="sp-tab-content" id="tab-neighbors">
-      <div class="sp-neighbors-list" id="sp-neighbors-list">
-        <!-- Rendered dynamically -->
-      </div>
-    </div>
-
-    <!-- Tab 4: Cryptographic Trust Ledger (Audit Trail) -->
-    <div class="sp-tab-content" id="tab-ledger">
-      <div class="sp-card" style="border-left: 3px solid #10b981;">
-        <div class="sp-card-title" style="color: #6ee7b7;">🔒 ডিজিটাল ট্রাস্ট লেজার (SHA-256 Chain + Ed25519)</div>
-        <p class="sp-card-text">
-          প্রতিটি অ্যাকশন ও ভেরিফিকেশন ফলাফল অপরিবর্তনযোগ্য ক্রিপ্টোগ্রাফিক হ্যাশ-চেইনে ব্লক আকারে সিল করা হয়।
-        </p>
-        <div style="font-size: 10px; color: #94a3b8; margin-bottom: 6px;">
-          অ্যালগরিদম: <code>SHA-256</code> · ডিজিটাল স্বাক্ষর: <code>Ed25519</code><br/>
-          চেইনের অবস্থা: <strong id="sp-ledger-status" style="color: #34d399;">সক্রিয় ও অটুট (INTACT)</strong>
-        </div>
-      </div>
-      <div id="sp-ledger-entries-list">
-        <!-- Rendered dynamically by sidepanel.js -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Leaflet JS (Local Bundle for MV3 CSP Compliance) -->
+  <!-- Leaflet Local Bundle -->
   <script src="vendor/leaflet/leaflet.js"></script>
-  <!-- Sidepanel Logic -->
+
+  <!-- Modular UI Components -->
+  <script src="components/i18n.js"></script>
+  <script src="components/VerdictHero.js"></script>
+  <script src="components/RuleGrid.js"></script>
+  <script src="components/AreaChart.js"></script>
+  <script src="components/LineageTimeline.js"></script>
+  <script src="components/TaxChart.js"></script>
+  <script src="components/LienTimeline.js"></script>
+  <script src="components/AuditChain.js"></script>
+
+  <!-- Main Orchestration Logic -->
   <script src="sidepanel.js"></script>
 </body>
 </html>

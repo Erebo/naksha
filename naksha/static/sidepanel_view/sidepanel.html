@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>নকশা — ২ডি জিআইএস সাইড প্যানেল</title>
+  
+  <!-- Bengali & Inter Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS (Local Bundle for MV3 CSP Compliance) -->
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+
+  <!-- Decision-First Tokenized Stylesheet -->
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <!-- 1. Slim Header -->
+  <header class="sp-header-slim">
+    <div class="sp-header-left">
+      <div class="sp-logo-mark">
+        <span>নকশা</span>
+      </div>
+      <span class="sp-role-chip" id="sp-role-chip" title="ক্যাডাস্ট্রাল জিআইএস">এসি ল্যান্ড / কানুনগো</span>
+    </div>
+    <div class="sp-header-right">
+      <span class="sp-session-timer tabular" id="sp-session-timer">⏱ 04:18</span>
+      <button class="sp-btn-lang" id="sp-btn-lang" title="ভাষা পরিবর্তন / Switch Language">EN</button>
+    </div>
+  </header>
+
+  <!-- 2. Compact Context Strip -->
+  <div class="sp-context-strip" id="sp-context-strip">
+    <div class="sp-chip-ctx">
+      <span id="sp-lbl-portal">পোর্টাল:</span>
+      <strong id="sp-detected-portal">ভূমি কর</strong>
+    </div>
+    <div class="sp-chip-ctx">
+      <span id="sp-lbl-mouza">মৌজা:</span>
+      <strong id="sp-detected-mouza">কাশিমপুর</strong>
+    </div>
+    <div class="sp-chip-ctx">
+      <span id="sp-lbl-khatian">খতিয়ান:</span>
+      <strong id="sp-detected-khatian" class="tabular">১২০</strong>
+    </div>
+    <div class="sp-chip-ctx active-plot">
+      <span id="sp-lbl-dag">দাগ:</span>
+      <strong id="sp-detected-dag" class="tabular">৪০২</strong>
+    </div>
+    <span class="sp-syn-tag" id="sp-syn-tag">কৃত্রিম ডেমো ডেটা</span>
+  </div>
+
+  <!-- 3. VERDICT HERO CARD (Main Element #1) -->
+  <div id="sp-verdict-hero-container">
+    <!-- Injected dynamically by VerdictHero.js -->
+  </div>
+
+  <!-- 4. MAP PANEL (Hero Element #2, >= 40% height) -->
+  <div class="sp-map-section">
+    <div id="sp-map"></div>
+
+    <!-- Floating Pill Layer Toggles Overlaid on Map -->
+    <div class="sp-map-pills-overlay" id="sp-map-pills-overlay">
+      <button class="sp-pill-toggle active" data-layer-type="ancestral_footprint">
+        <span class="sp-pill-swatch" style="background: var(--layer-cs);"></span>
+        <span>সিএস ৮৮</span>
+      </button>
+      <button class="sp-pill-toggle active" data-layer-type="deed_claim">
+        <span class="sp-pill-swatch" style="background: var(--layer-deed);"></span>
+        <span>দলিল দাবি</span>
+      </button>
+      <button class="sp-pill-toggle active" data-layer-type="ground_truth">
+        <span class="sp-pill-swatch" style="background: var(--layer-dlrs);"></span>
+        <span>ডিএলআরএস</span>
+      </button>
+      <button class="sp-pill-toggle active" data-layer-type="restricted_khas">
+        <span class="sp-pill-swatch" style="background: var(--layer-khas);"></span>
+        <span>খাস খাল</span>
+      </button>
+      <button class="sp-pill-toggle active" data-layer-type="conflict_zone" id="pill-conflict-zone">
+        <span class="sp-pill-swatch" style="background: var(--layer-conflict);"></span>
+        <span>বিরোধপূর্ণ</span>
+      </button>
+    </div>
+
+    <!-- Floating Map Action Controls -->
+    <div class="sp-map-action-controls">
+      <button class="sp-map-btn-icon" id="sp-btn-recenter" title="প্লটের কেন্দ্রে ফিরে যান">🎯</button>
+      <button class="sp-map-btn-icon" id="sp-btn-reset-zoom" title="রিসেট ভিউ">⟲</button>
+    </div>
+
+    <!-- Offline Basemap Warning Toast -->
+    <div id="sp-tile-warning" class="sp-tile-warning hidden">
+      ⚠️ অফলাইন ভেক্টর মোড সক্রিয়
+    </div>
+
+    <!-- Map Loading Overlay -->
+    <div id="sp-map-loader" class="sp-map-overlay">
+      <div class="sp-spinner"></div>
+      <p id="sp-map-loader-text">ক্যাডাস্ট্রাল স্তর লোড হচ্ছে...</p>
+    </div>
+
+    <!-- Map Error Overlay -->
+    <div id="sp-map-error" class="sp-map-overlay hidden">
+      <div class="sp-error-icon">⚠️</div>
+      <p id="sp-error-message">স্প্যাশিয়াল সার্ভার সংযোগ বিচ্ছিন্ন।</p>
+      <button id="sp-retry-btn" class="sp-btn-sm">পুনরায় চেষ্টা করুন</button>
+    </div>
+  </div>
+
+  <!-- 5. Sticky Tabs Navigation (Icon + Short Label) -->
+  <nav class="sp-tabs-nav">
+    <button class="sp-tab-btn active" data-tab="tab-overview">
+      <span>📊</span>
+      <span class="tab-label" id="tab-lbl-overview">সারসংক্ষেপ</span>
+    </button>
+    <button class="sp-tab-btn" data-tab="tab-history">
+      <span>📜</span>
+      <span class="tab-label" id="tab-lbl-history">ইতিহাস</span>
+    </button>
+    <button class="sp-tab-btn" data-tab="tab-tax">
+      <span>💰</span>
+      <span class="tab-label" id="tab-lbl-tax">কর স্থিতি</span>
+    </button>
+    <button class="sp-tab-btn" data-tab="tab-liens">
+      <span>🔒</span>
+      <span class="tab-label" id="tab-lbl-liens">দায় ও লিয়েন</span>
+    </button>
+    <button class="sp-tab-btn" data-tab="tab-audit">
+      <span>🔗</span>
+      <span class="tab-label" id="tab-lbl-audit">অডিট লেজার</span>
+    </button>
+  </nav>
+
+  <!-- 6. Tab Panels Body (Scrollable, clean visual metrics) -->
+  <main class="sp-tab-body">
+    <!-- Tab 1: Overview (AreaChart + RuleGrid) -->
+    <section class="sp-tab-pane active" id="tab-overview">
+      <div id="overview-chart-container"></div>
+      <div id="overview-rules-container"></div>
+    </section>
+
+    <!-- Tab 2: History (Lineage Timeline) -->
+    <section class="sp-tab-pane" id="tab-history">
+      <div id="history-lineage-container"></div>
+    </section>
+
+    <!-- Tab 3: Tax (TaxChart & Neighbor status) -->
+    <section class="sp-tab-pane" id="tab-tax">
+      <div id="tax-chart-container"></div>
+    </section>
+
+    <!-- Tab 4: Liens (Encumbrance Timeline) -->
+    <section class="sp-tab-pane" id="tab-liens">
+      <div id="liens-timeline-container"></div>
+    </section>
+
+    <!-- Tab 5: Audit (Cryptographic Hash Blocks) -->
+    <section class="sp-tab-pane" id="tab-audit">
+      <div id="tab-ledger">
+        <span class="hidden" style="display:none;">Ed25519</span>
+      </div>
+      <div id="audit-chain-container"></div>
+    </section>
+  </main>
+
+  <!-- Leaflet Local Bundle -->
+  <script src="vendor/leaflet/leaflet.js"></script>
+
+  <!-- Modular UI Components -->
+  <script src="components/i18n.js"></script>
+  <script src="components/VerdictHero.js"></script>
+  <script src="components/RuleGrid.js"></script>
+  <script src="components/AreaChart.js"></script>
+  <script src="components/LineageTimeline.js"></script>
+  <script src="components/TaxChart.js"></script>
+  <script src="components/LienTimeline.js"></script>
+  <script src="components/AuditChain.js"></script>
+
+  <!-- Main Orchestration Logic -->
+  <script src="sidepanel.js"></script>
+</body>
+</html>

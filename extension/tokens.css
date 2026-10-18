@@ -1,0 +1,106 @@
+/* ==============================================================================
+   NAKSHA (নকশা) — Design System Tokens
+   Decision-First Government Land Revenue Spatial Intelligence Cockpit
+   Strict 8px Grid, 12px Radii, Tabular Numerals, High WCAG Contrast
+   ============================================================================== */
+
+:root {
+  /* Strict Palette */
+  --bg-canvas: #0B1220;
+  --bg-surface: #111A2E;
+  --bg-surface-elevated: #19253F;
+  --bg-surface-muted: #131E35;
+  --border-subtle: #1E2A44;
+  --border-focus: #14B8A6;
+
+  /* Typography Colors */
+  --text-main: #E6EBF5;
+  --text-muted: #8FA0BF;
+  --text-dim: #5A6B8A;
+  --text-inverse: #0B1220;
+
+  /* Semantic Status Palette (Status ONLY) */
+  --status-clear: #22C55E;
+  --status-clear-bg: rgba(34, 197, 94, 0.12);
+  --status-clear-border: rgba(34, 197, 94, 0.35);
+
+  --status-review: #F59E0B;
+  --status-review-bg: rgba(245, 158, 11, 0.12);
+  --status-review-border: rgba(245, 158, 11, 0.35);
+
+  --status-block: #EF4444;
+  --status-block-bg: rgba(239, 68, 68, 0.12);
+  --status-block-border: rgba(239, 68, 68, 0.35);
+
+  /* Single Brand Interactive Accent */
+  --accent-teal: #14B8A6;
+  --accent-teal-bg: rgba(20, 184, 166, 0.12);
+  --accent-teal-border: rgba(20, 184, 166, 0.40);
+
+  /* Map Survey Layer Accents */
+  --layer-cs: #8B5CF6;
+  --layer-deed: #3B82F6;
+  --layer-dlrs: #10B981;
+  --layer-khas: #0EA5E9;
+  --layer-conflict: #EF4444;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-bn: 'Noto Sans Bengali', 'Hind Siliguri', -apple-system, sans-serif;
+
+  /* Radius & Shadows */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Spatial Grid (8px baseline) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+}
+
+/* Base Reset & Global Rules */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-bn);
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
+  line-height: 1.4;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* Tabular Numerals for metrics, dates, and areas */
+.tabular, .num, .metric-val, code, .badge-count {
+  font-family: 'Inter', monospace;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-canvas);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
