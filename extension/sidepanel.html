@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>নকশা — ২ডি জিআইএস সাইড প্যানেল</title>
+  
+  <!-- Bengali Font Hind Siliguri -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+  <!-- Sidepanel Custom Styles -->
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <!-- Header with Live Context Banner -->
+  <header class="sp-header">
+    <div class="sp-brand">
+      <div class="sp-logo">নকশা</div>
+      <div>
+        <h1 class="sp-title">ক্যাডাস্ট্রাল জিআইএস</h1>
+        <p class="sp-subtitle">ভূমি ডেটা ইন্টেলিজেন্স ইঞ্জিন</p>
+      </div>
+    </div>
+    <div id="sp-verdict" class="sp-verdict-pill verdict-block">
+      <span class="sp-verdict-dot"></span>
+      <span id="sp-verdict-text">ব্লক (BLOCK)</span>
+    </div>
+  </header>
+
+  <!-- Portal Context Detection Banner -->
+  <div class="sp-context-bar" id="sp-context-bar">
+    <div class="sp-context-item">
+      <span class="sp-label">শনাক্তকরণ:</span>
+      <span class="sp-val" id="sp-detected-portal">ভূমি কর পোর্টাল</span>
+    </div>
+    <div class="sp-context-item">
+      <span class="sp-label">দাগ:</span>
+      <span class="sp-val font-bold" id="sp-detected-dag">বিএস ৪০২</span>
+    </div>
+    <div class="sp-context-item">
+      <span class="sp-label">খতিয়ান:</span>
+      <span class="sp-val" id="sp-detected-khatian">১২০</span>
+    </div>
+    <div class="sp-context-item">
+      <span class="sp-label">মৌজা:</span>
+      <span class="sp-val" id="sp-detected-mouza">কাশিমপুর</span>
+    </div>
+  </div>
+
+  <!-- Disclaimer Notice -->
+  <div class="sp-disclaimer">
+    ⚠️ কৃত্রিম ডেমো ডেটা — কোনো বাস্তব সরকারি রেকর্ডের সাথে সম্পর্কযুক্ত নয়
+  </div>
+
+  <!-- Hero Component: Interactive 2D Leaflet Map -->
+  <div class="sp-map-wrapper">
+    <div id="sp-map"></div>
+
+    <!-- Map Loading Overlay -->
+    <div id="sp-map-loader" class="sp-map-overlay">
+      <div class="sp-spinner"></div>
+      <p>২ডি ক্যাডাস্ট্রাল স্তরসমূহ লোড হচ্ছে...</p>
+    </div>
+
+    <!-- Map Error Overlay -->
+    <div id="sp-map-error" class="sp-map-overlay hidden">
+      <div class="sp-error-icon">⚠️</div>
+      <p id="sp-error-message">স্প্যাশিয়াল সার্ভার সংযোগ বিচ্ছিন্ন (http://127.0.0.1:8000)।</p>
+      <button id="sp-retry-btn" class="sp-btn-sm">পুনরায় চেষ্টা করুন</button>
+    </div>
+
+    <!-- Quick Floating Layer Toggles in Map -->
+    <div class="sp-floating-controls">
+      <button class="sp-map-btn" id="sp-btn-recenter" title="প্লটের কেন্দ্রে ফিরে যান">🎯</button>
+      <button class="sp-map-btn" id="sp-btn-toggle-layers" title="স্তর তালিকা খুলুন">📑</button>
+    </div>
+  </div>
+
+  <!-- Layer Visibility Controls (Toggleable Drawer) -->
+  <div class="sp-layer-section" id="sp-layer-section">
+    <div class="sp-section-header">
+      <h3>মানচিত্রের স্তরসমূহ (Multi-Era Layers)</h3>
+      <span class="sp-badge-count" id="sp-layer-count">৫টি স্তর</span>
+    </div>
+    <div class="sp-layer-list" id="sp-layer-toggles">
+      <!-- Injected dynamically by sidepanel.js -->
+    </div>
+  </div>
+
+  <!-- Verification & Plot Insights Panel -->
+  <div class="sp-details-container">
+    <!-- Tab Controls -->
+    <div class="sp-tabs">
+      <button class="sp-tab active" data-tab="tab-discrepancy">ব্যাখ্যা ও অমিল</button>
+      <button class="sp-tab" data-tab="tab-survey">জরিপ ইতিহাস</button>
+      <button class="sp-tab" data-tab="tab-neighbors">প্রতিবেশী ও কর</button>
+    </div>
+
+    <!-- Tab 1: Discrepancy & Verification Explanation -->
+    <div class="sp-tab-content active" id="tab-discrepancy">
+      <div class="sp-card alert-card">
+        <div class="sp-card-title text-danger">🚨 সরকারি খাস খাল দখল ও সীমানা অমিল</div>
+        <p class="sp-card-text">
+          দলিলে দাবিকৃত জমি <strong>৬.০০ শতক</strong>, কিন্তু ডিএলআরএস জরিপকৃত প্রকৃত জমি <strong>৫.১ শতক</strong>।
+          বাকি <strong>০.৯০ শতক</strong> উত্তর পাশের সরকারি খাস নিষ্কাশন খালের ভেতরে ঢুকে পড়েছে।
+        </p>
+        <div class="sp-metrics-grid">
+          <div class="sp-metric">
+            <span class="sp-m-label">দলিলে দাবি</span>
+            <span class="sp-m-val text-blue">৬.০০ শতক</span>
+          </div>
+          <div class="sp-metric">
+            <span class="sp-m-label">জরিপে প্রকৃত</span>
+            <span class="sp-m-val text-green">৫.১ শতক</span>
+          </div>
+          <div class="sp-metric">
+            <span class="sp-m-label">খাল দখল</span>
+            <span class="sp-m-val text-red">০.৯০ শতক</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sp-card">
+        <div class="sp-card-title">স্বয়ংক্রিয় নীতিগত সুপারিশ</div>
+        <ul class="sp-rule-list">
+          <li>❌ <strong>নামজারি আবেদন সাময়িক স্থগিত:</strong> সরকারি খাস ভূমির সাথে অমিল নিষ্পত্তি না হওয়া পর্যন্ত মিউটেশন চূড়ান্ত অনুমোদনযোগ্য নয়।</li>
+          <li>⚠️ <strong>যৌথ সীমানা পরিমাপ:</strong> ইউনিয়ন ভূমি সহকারী কর্মকর্তা ও কানুনগো দ্বারা বাস্তব সরজমিনে সীমানা পরিমাপের নির্দেশ।</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Tab 2: Survey History -->
+    <div class="sp-tab-content" id="tab-survey">
+      <div class="sp-timeline">
+        <div class="sp-timeline-item">
+          <div class="sp-tl-dot purple"></div>
+          <div class="sp-tl-content">
+            <div class="sp-tl-title">১. সিএস জরিপ (১৯৪০) — দাগ ৮৮</div>
+            <div class="sp-tl-sub">পৈত্রিক মোট জমি: ১৮.০০ শতক (বিভাজনের পূর্ববর্তী মূল খণ্ড)</div>
+          </div>
+        </div>
+        <div class="sp-timeline-item">
+          <div class="sp-tl-dot blue"></div>
+          <div class="sp-tl-content">
+            <div class="sp-tl-title">২. সাব-রেজিস্ট্রি দলিল (২০২৪) — দলিল নং ৪০২</div>
+            <div class="sp-tl-sub">ক্রেতা: মোঃ আব্দুল করিম · বিক্রিত জমি: ৬.০০ শতক</div>
+          </div>
+        </div>
+        <div class="sp-timeline-item">
+          <div class="sp-tl-dot green"></div>
+          <div class="sp-tl-content">
+            <div class="sp-tl-title">৩. ডিএলআরএস জরিপ (বর্তমান) — দাগ ৪০২</div>
+            <div class="sp-tl-sub">সরজমিন পরিমাপকৃত সীমানা: ৫.১ শতক</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Neighbors & Tax Map -->
+    <div class="sp-tab-content" id="tab-neighbors">
+      <div class="sp-neighbors-list" id="sp-neighbors-list">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS from CDN -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Sidepanel Logic -->
+  <script src="sidepanel.js"></script>
+</body>
+</html>

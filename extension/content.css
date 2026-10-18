@@ -1,0 +1,86 @@
+/* ==============================================================================
+   NAKSHA (নকশা) — Content Script Floating Badge Styles
+   Bangla-First Floating Pill on Mock Land Portals
+   ============================================================================== */
+
+.naksha-pill-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999999;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 10px 16px;
+  border-radius: 50px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  border: 1px solid #334155;
+  font-family: 'Hind Siliguri', -apple-system, BlinkMacSystemFont, sans-serif;
+  animation: naksha-slide-up 0.3s ease-out;
+  display: flex;
+  align-items: center;
+}
+
+@keyframes naksha-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.naksha-pill-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.naksha-pill-logo {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+.naksha-pill-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.naksha-pill-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.naksha-pill-title strong {
+  color: #38bdf8;
+}
+
+.naksha-pill-sub {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.naksha-pill-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.naksha-pill-btn:hover {
+  background: #1d4ed8;
+}

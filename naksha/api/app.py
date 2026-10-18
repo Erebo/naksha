@@ -51,6 +51,16 @@ def create_app() -> FastAPI:
             """Direct alias to serve the 2D GIS side panel."""
             return FileResponse(STATIC_DIR / "index.html")
 
+        @app.get("/portals/ld-tax", include_in_schema=False)
+        async def serve_mock_ld_tax():
+            """Serve the synthetic demonstration LD Tax portal."""
+            return FileResponse(STATIC_DIR / "portals" / "ld_tax.html")
+
+        @app.get("/portals/e-mutation", include_in_schema=False)
+        async def serve_mock_e_mutation():
+            """Serve the synthetic demonstration e-Mutation portal."""
+            return FileResponse(STATIC_DIR / "portals" / "e_mutation.html")
+
     return app
 
 

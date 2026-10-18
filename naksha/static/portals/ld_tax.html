@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ভূমি উন্নয়ন কর পোর্টাল — ডেমো সংস্করণ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-bangla: 'Hind Siliguri', -apple-system, sans-serif;
+            --primary: #059669;
+            --primary-dark: #047857;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-sub: #475569;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-bangla);
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+        /* Demo Disclaimer Banner */
+        .demo-warning-banner {
+            background: #fef3c7;
+            border-bottom: 2px solid #f59e0b;
+            color: #92400e;
+            padding: 0.5rem 1rem;
+            text-align: center;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .portal-header {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .portal-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .govt-logo {
+            width: 44px;
+            height: 44px;
+            background: #dc2626;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .portal-brand h1 { font-size: 1.25rem; font-weight: 700; color: #1e293b; }
+        .portal-brand p { font-size: 0.8rem; color: var(--text-sub); }
+        .officer-session {
+            text-align: right;
+            font-size: 0.8rem;
+        }
+        .session-badge {
+            background: #ecfdf5;
+            color: #059669;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 0.25rem;
+        }
+
+        .portal-container {
+            max-width: 1050px;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Search / Select Bar */
+        .filter-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .filter-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.85rem;
+            color: var(--primary-dark);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.4rem;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .form-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+        .form-select, .form-input {
+            padding: 0.45rem 0.65rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: var(--font-bangla);
+            font-size: 0.85rem;
+            background: #fff;
+        }
+
+        /* Holding Record Card */
+        .record-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+        .record-header h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+        .tax-status-pill {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+            padding: 0.3rem 0.8rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 0.82rem;
+        }
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .detail-box {
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            padding: 0.85rem;
+            border-radius: 6px;
+        }
+        .detail-label {
+            font-size: 0.74rem;
+            color: var(--text-sub);
+            margin-bottom: 0.2rem;
+        }
+        .detail-val {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* Action Buttons */
+        .action-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+        }
+        .btn {
+            font-family: var(--font-bangla);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.5rem 1.25rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-outline {
+            background: #fff;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Plot Selector Chips */
+        .plot-selector-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .chip {
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            background: #e2e8f0;
+            color: #334155;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        .chip.active {
+            background: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Safety Notice -->
+    <div class="demo-warning-banner">
+        ⚠️ কৃত্রিম ডেমো পোর্টাল — এটি কেবল নকশা (NAKSHA) হ্যাকাথন প্রদর্শনের জন্য প্রস্তুতকৃত। কোনো সরকারি ওয়েবসাইট বা সার্ভারের সাথে যুক্ত নয়।
+    </div>
+
+    <!-- Portal Header -->
+    <header class="portal-header">
+        <div class="portal-brand">
+            <div class="govt-logo">ভূমি</div>
+            <div>
+                <h1>ভূমি উন্নয়ন কর ব্যবস্থাপনা সিস্টেম (LD Tax)</h1>
+                <p>গণপ্রজাতন্ত্রী বাংলাদেশ সরকার · ভূমি মন্ত্রণালয়</p>
+            </div>
+        </div>
+        <div class="officer-session">
+            <div>ইউনিয়ন ভূমি সহকারী কর্মকর্তা · কাশিমপুর</div>
+            <div class="session-badge">সেশন আইডি: UL-2024-KSH</div>
+        </div>
+    </header>
+
+    <div class="portal-container">
+        <!-- Quick Demo Switcher -->
+        <div class="plot-selector-row">
+            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">নমুনা প্লট নির্বাচন করুন:</span>
+            <button class="chip active" onclick="switchPlot('402', '120', 'H-402', 'মোঃ আব্দুল করিম', '৬.০০', 'পরিশোধিত')">দাগ ৪০২ (মূল পার্সেল)</button>
+            <button class="chip" onclick="switchPlot('401', '88', 'H-401', 'মোঃ রহিম শেখ', '৪.৩৭', 'পরিশোধিত')">দাগ ৪০১ (পশ্চিম প্রতিবেশী)</button>
+            <button class="chip" onclick="switchPlot('403', '125', 'H-403', 'আব্দুল মজিদ', '৫.৫৩', 'বকেয়া')">দাগ ৪০৩ (দক্ষিণ প্রতিবেশী)</button>
+        </div>
+
+        <!-- Filter Card -->
+        <div class="filter-card">
+            <div class="filter-title">মৌজা ও খতিয়ান অনুসন্ধান</div>
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label class="form-label">বিভাগ</label>
+                    <input class="form-input" value="ঢাকা" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">জেলা</label>
+                    <input class="form-input" value="গাজীপুর" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">উপজেলা</label>
+                    <input class="form-input" value="গাজীপুর সদর" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">মৌজা ও জে. এল.</label>
+                    <input class="form-input" id="input-mouza" value="কাশিমপুর (২৮)" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Holding Record Container (Detected by NAKSHA Extension Content Script) -->
+        <section 
+            id="naksha-portal-context" 
+            class="record-card"
+            data-portal="ld_tax"
+            data-mouza="কাশিমপুর"
+            data-jl="28"
+            data-upazila="গাজীপুর সদর"
+            data-district="গাজীপুর"
+            data-dag="402"
+            data-khatian="120"
+            data-holding="H-402"
+            data-owner="মোঃ আব্দুল করিম"
+            data-area="6.0"
+            data-tax-status="paid"
+        >
+            <div class="record-header">
+                <div>
+                    <h2>হোল্ডিং নম্বর: <span id="disp-holding">H-402</span> (বিএস জরিপ)</h2>
+                    <p style="font-size: 0.8rem; color: #64748b;">মৌজা: কাশিমপুর · জে. এল. নং: ২৮</p>
+                </div>
+                <div class="tax-status-pill" id="disp-tax-badge">কর পরিশোধিত (Paid)</div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-box">
+                    <div class="detail-label">দাগ নম্বর (Plot / Dag)</div>
+                    <div class="detail-val" id="disp-dag">বিএস ৪০২</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">খতিয়ান নম্বর (Khatian)</div>
+                    <div class="detail-val" id="disp-khatian">বিএস ১২০</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">জমির শ্রেণি (Land Class)</div>
+                    <div class="detail-val" id="disp-class">নাল (কৃষি)</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">দাবিকৃত পরিমাণ (Area)</div>
+                    <div class="detail-val" id="disp-area">৬.০০ শতক</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">রেকর্ডীয় মালিক (Owner)</div>
+                    <div class="detail-val" id="disp-owner">মোঃ আব্দুল করিম</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">দাখিলা রশিদ নম্বর</div>
+                    <div class="detail-val" id="disp-receipt">TAX-2024-KSH-402</div>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <button class="btn btn-outline">দাখিলা প্রিন্ট করুন</button>
+                <button class="btn btn-primary">কর গ্রহণ ও রসিদ তৈরি</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        function switchPlot(dag, khatian, holding, owner, area, taxStatus) {
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const ctx = document.getElementById('naksha-portal-context');
+            ctx.setAttribute('data-dag', dag);
+            ctx.setAttribute('data-khatian', khatian);
+            ctx.setAttribute('data-holding', holding);
+            ctx.setAttribute('data-owner', owner);
+            ctx.setAttribute('data-area', area);
+            ctx.setAttribute('data-tax-status', taxStatus === 'পরিশোধিত' ? 'paid' : 'arrears');
+
+            document.getElementById('disp-holding').textContent = holding;
+            document.getElementById('disp-dag').textContent = 'বিএস ' + dag;
+            document.getElementById('disp-khatian').textContent = 'বিএস ' + khatian;
+            document.getElementById('disp-owner').textContent = owner;
+            document.getElementById('disp-area').textContent = area + ' শতক';
+            
+            const badge = document.getElementById('disp-tax-badge');
+            badge.textContent = taxStatus === 'পরিশোধিত' ? 'কর পরিশোধিত (Paid)' : 'কর বকেয়া (Arrears)';
+            badge.style.background = taxStatus === 'পরিশোধিত' ? '#dcfce7' : '#fef3c7';
+            badge.style.color = taxStatus === 'পরিশোধিত' ? '#15803d' : '#92400e';
+            badge.style.borderColor = taxStatus === 'পরিশোধিত' ? '#86efac' : '#fde68a';
+
+            // Dispatch custom event for content script detection
+            window.dispatchEvent(new CustomEvent('naksha:plotChanged', {
+                detail: { dag, khatian, holding, owner, area }
+            }));
+        }
+    </script>
+</body>
+</html>

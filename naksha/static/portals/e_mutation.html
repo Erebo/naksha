@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ই-নামজারি ও জমাখারিজ পোর্টাল — ডেমো সংস্করণ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-bangla: 'Hind Siliguri', -apple-system, sans-serif;
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-sub: #475569;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-bangla);
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+        .demo-warning-banner {
+            background: #fef3c7;
+            border-bottom: 2px solid #f59e0b;
+            color: #92400e;
+            padding: 0.5rem 1rem;
+            text-align: center;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .portal-header {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .portal-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .govt-logo {
+            width: 44px;
+            height: 44px;
+            background: #0284c7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.15rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .portal-brand h1 { font-size: 1.25rem; font-weight: 700; color: #1e293b; }
+        .portal-brand p { font-size: 0.8rem; color: var(--text-sub); }
+        .officer-session {
+            text-align: right;
+            font-size: 0.8rem;
+        }
+        .session-badge {
+            background: #f0f9ff;
+            color: #0284c7;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 0.25rem;
+        }
+        .portal-container {
+            max-width: 1050px;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+        }
+        .mutation-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+        .card-header h2 { font-size: 1.15rem; font-weight: 700; color: var(--primary-dark); }
+        .status-pill {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            padding: 0.3rem 0.8rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 0.82rem;
+        }
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .detail-box {
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            padding: 0.85rem;
+            border-radius: 6px;
+        }
+        .detail-label { font-size: 0.74rem; color: var(--text-sub); margin-bottom: 0.2rem; }
+        .detail-val { font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+        .action-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+        }
+        .btn {
+            font-family: var(--font-bangla);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.5rem 1.25rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-primary { background: var(--primary); color: white; }
+    </style>
+</head>
+<body>
+    <!-- Safety Notice -->
+    <div class="demo-warning-banner">
+        ⚠️ কৃত্রিম ডেমো পোর্টাল — এটি কেবল নকশা (NAKSHA) হ্যাকাথন প্রদর্শনের জন্য প্রস্তুতকৃত। কোনো সরকারি ওয়েবসাইট বা সার্ভারের সাথে যুক্ত নয়।
+    </div>
+
+    <!-- Portal Header -->
+    <header class="portal-header">
+        <div class="portal-brand">
+            <div class="govt-logo">নামজারি</div>
+            <div>
+                <h1>ই-নামজারি ও মিউটেশন ব্যবস্থাপনা সিস্টেম</h1>
+                <p>গণপ্রজাতন্ত্রী বাংলাদেশ সরকার · ভূমি প্রশাসন</p>
+            </div>
+        </div>
+        <div class="officer-session">
+            <div>সহকারী কমিশনার (ভূমি) · সদর উপজেলা</div>
+            <div class="session-badge">অফিসার আইডি: ACL-GZ-04</div>
+        </div>
+    </header>
+
+    <div class="portal-container">
+        <!-- Mutation Case Record Card -->
+        <section 
+            id="naksha-portal-context" 
+            class="mutation-card"
+            data-portal="e_mutation"
+            data-mouza="কাশিমপুর"
+            data-jl="28"
+            data-upazila="গাজীপুর সদর"
+            data-district="গাজীপুর"
+            data-dag="402"
+            data-khatian="120"
+            data-case-id="MUT-2024-GZ-884"
+            data-deed-no="DEED-2024-DH-402"
+            data-owner="Md. Abdul Karim"
+            data-area="6.0"
+        >
+            <div class="card-header">
+                <div>
+                    <h2>মিউটেশন কেস নম্বর: MUT-2024-GZ-884</h2>
+                    <p style="font-size: 0.8rem; color: #64748b;">মৌজা: কাশিমপুর · আবেদন দাখিল: ১২ মে ২০২৪</p>
+                </div>
+                <div class="status-pill">শুনানির অপেক্ষায় (Pending Hearing)</div>
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-box">
+                    <div class="detail-label">দাগ নম্বর (Dag No.)</div>
+                    <div class="detail-val">বিএস ৪০২</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">খতিয়ান নম্বর (Khatian No.)</div>
+                    <div class="detail-val">বিএস ১২০</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">সাব-রেজিস্ট্রি দলিলের নম্বর</div>
+                    <div class="detail-val">DEED-2024-DH-402</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">আবেদনকৃত জমির পরিমাণ</div>
+                    <div class="detail-val">৬.০০ শতক</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">আবেদনকারী / ক্রেতা</div>
+                    <div class="detail-val">মোঃ আব্দুল করিম (Md. Abdul Karim)</div>
+                </div>
+                <div class="detail-box">
+                    <div class="detail-label">বিক্রেতা / পূর্বতন মালিক</div>
+                    <div class="detail-val">মৃত কাসেম আলী (ওয়ারিশ সূত্রে)</div>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <button class="btn btn-outline">খতিয়ান রেকর্ড যাচাই</button>
+                <button class="btn btn-primary">নামজারি শুনানির আদেশ প্রস্তুত</button>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

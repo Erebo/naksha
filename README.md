@@ -98,15 +98,51 @@ Execute the comprehensive test suite (50 unit & integration tests covering data 
 pytest -v
 ```
 
-### 4. Start Backend & 2D GIS Interface
+### 4. Start Backend & Access Interfaces
 Launch the FastAPI development server:
 ```bash
 uvicorn naksha.api.app:app --reload --host 127.0.0.1 --port 8000
 ```
 Interactive visual interface and documentation links:
 * **Bangla-First 2D GIS Interactive Map**: [http://127.0.0.1:8000/](http://127.0.0.1:8000/) or [http://127.0.0.1:8000/map](http://127.0.0.1:8000/map)
+* **Mock ভূমি উন্নয়ন কর পোর্টাল (LD Tax Portal)**: [http://127.0.0.1:8000/portals/ld-tax](http://127.0.0.1:8000/portals/ld-tax)
+* **Mock ই-নামজারি ও মিউটেশন পোর্টাল (e-Mutation Portal)**: [http://127.0.0.1:8000/portals/e-mutation](http://127.0.0.1:8000/portals/e-mutation)
 * **Interactive API Documentation (Swagger UI)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 * **ReDoc Documentation**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+
+---
+
+## 🧩 Stage 5: Chrome Extension Side Panel & Mock Portals
+
+Stage 5 delivers the zero-integration side panel experience for land officers:
+* **Bangla-First Mock Land Portals (`naksha/static/portals/`)**:
+  * Realistic, purely synthetic mock interfaces representing the Union Land Office LD Tax portal (`/portals/ld-tax`) and AC Land e-Mutation portal (`/portals/e-mutation`).
+  * Structured context containers exposing synthetic Mouza, Dag, Khatian, holding, and owner attributes.
+  * Interactive plot switcher allowing officers to test Dag 402 (target plot), Dag 401 (west neighbor), and Dag 403 (south neighbor with tax arrears).
+  * 100% synthetic demonstration data; zero connection to live government servers.
+* **Chrome Extension Manifest V3 (`extension/`)**:
+  * **Service Worker (`background.js`)**: Manages `chrome.sidePanel` lifecycle, state storage (`chrome.storage.local`), and cross-context routing.
+  * **Content Script (`content.js` & `content.css`)**: Injected into the local mock portal domains (`http://127.0.0.1:8000/portals/*`). Detects plot identifiers from the active page, listens to dynamic plot switching, and renders a floating Bangla NAKSHA launcher badge.
+  * **Interactive GIS Side Panel (`sidepanel.html`, `sidepanel.css`, `sidepanel.js`)**: Custom-tailored for the Chrome Side Panel drawer width (~380px). Renders the full Leaflet 2D GIS map with toggleable multi-era layers (CS 88 ancestral footprint, Deed claim, DLRS survey, Khas canal conflict zone), neighbor tax statuses, and discrepancy explainers.
+
+### 🔌 Chrome Extension Demo Instructions
+1. Open Google Chrome and navigate to `chrome://extensions/`.
+2. Enable **Developer mode** using the toggle switch in the top-right corner.
+3. Click the **Load unpacked** button in the top-left toolbar.
+4. Select the `extension/` folder inside this repository: `c:\Users\user\Desktop\P\naksha\extension`.
+5. Start the NAKSHA FastAPI backend:
+   ```bash
+   uvicorn naksha.api.app:app --reload --host 127.0.0.1 --port 8000
+   ```
+6. Open the synthetic LD Tax portal in Chrome:
+   [http://127.0.0.1:8000/portals/ld-tax](http://127.0.0.1:8000/portals/ld-tax)
+7. Observe the floating **নকশা** badge at the bottom right corner with identified plot details (`দাগ ৪০২`).
+8. Click the Chrome Extensions puzzle icon (or the NAKSHA toolbar icon) and select **Open Side Panel**.
+9. The NAKSHA side panel opens alongside the portal, immediately rendering:
+   * Real-time detected plot identifiers (মৌজা কাশিমপুর, দাগ ৪০২, খতিয়ান ১২০).
+   * Interactive Leaflet 2D GIS map showing the 4 layers: purple CS 88 boundary, blue deed claim, green DLRS survey, and red Khas canal conflict zone.
+   * Clear Bangla explanation of the 0.90 decimal Khas canal encroachment and the automated BLOCK verdict.
+10. Click different plot chips on the mock portal (e.g. `দাগ ৪০৩` or `দাগ ৪০১`); notice the extension seamlessly synchronizes with the active plot.
 
 ---
 
