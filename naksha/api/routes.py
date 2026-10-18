@@ -33,13 +33,21 @@ from naksha.spatial.engine import (
 
 router = APIRouter()
 
-# Default singleton repository pre-populated with synthetic records
-_default_repo = InMemoryRecordRepository(initial_records=generate_synthetic_records())
+from naksha.database.repository import SQLAlchemyRecordRepository
+from naksha.database.init_db import init_database
+
+# Ensure database tables and seed data exist
+try:
+    init_database()
+    _persistent_repo = SQLAlchemyRecordRepository()
+except Exception as e:
+    print(f"[NAKSHA API] Persistent database fallback notice: {e}")
+    _persistent_repo = InMemoryRecordRepository(initial_records=generate_synthetic_records())
 
 
 def get_repository() -> BaseRecordRepository:
     """Dependency provider for the repository layer."""
-    return _default_repo
+    return _persistent_repo
 
 
 # ==============================================================================
@@ -346,6 +354,38 @@ def get_parcel_conflict_zone(parcel_id: str) -> Optional[SpatialConflictZone]:
             detail=f"No spatial conflict detected on parcel '{parcel_id}'.",
         )
     return conflict
+
+
+@router.get(
+    f"{settings.api_prefix}/spatial/parcels/{{parcel_id}}/verification",
+    response_model=VerificationResult,
+    summary="Get Dynamic Cross-Agency Verification for Parcel",
+    tags=["Spatial Engine", "Verification Engine"],
+)
+def get_parcel_verification(
+    parcel_id: str,
+    repo: BaseRecordRepository = Depends(get_repository),
+) -> VerificationResult:
+    """Performs dynamic cross-agency record verification for the target parcel cohort,
+    sealing the verdict and cited records into the append-only SHA-256 + Ed25519 Trust Ledger.
+    """
+    from naksha.services.verification import verify_parcel_by_id
+    from naksha.data.synthetic_spatial import normalize_parcel_key
+
+    result = verify_parcel_by_id(parcel_id, repo)
+    key = normalize_parcel_key(parcel_id)
+
+    # Record into cryptographic Trust Ledger
+    audit_ledger.record_verification(
+        event_type="VERIFICATION_VERDICT",
+        canonical_parcel_id=result.canonical_parcel_id,
+        dag_number=key,
+        mouza="কাশিমপুর (Kashimpur)",
+        verdict=result.verdict.value,
+        cited_records=result.compared_record_ids,
+        officer_id="UL-2024-KSH",
+    )
+    return result
 
 
 @router.post(

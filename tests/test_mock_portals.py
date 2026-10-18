@@ -89,7 +89,7 @@ def test_e2e_multi_plot_journey_and_verdicts():
     res_401 = client.get("/api/v1/records?dag=401")
     assert res_401.status_code == 200
     records_401 = res_401.json()["records"]
-    assert len(records_401) == 1
+    assert len(records_401) >= 1
     rec_401 = records_401[0]
     assert rec_401["dag_number"]["normalized_value"] == "401"
     assert rec_401["khatian_number"]["normalized_value"] == "88"

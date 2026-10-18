@@ -3,13 +3,26 @@
  * Manages side panel behavior, storage synchronization, and cross-context messaging.
  */
 
-// Configure Chrome Extension Side Panel behavior on install
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('[NAKSHA Background] Service worker installed.');
+// Configure Chrome Extension Side Panel behavior on install and startup
+function configureSidePanel() {
   if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
     chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+      .then(() => console.log('[NAKSHA Background] Side panel behavior configured: open on action click.'))
       .catch((err) => console.error('[NAKSHA Background] Error setting panel behavior:', err));
   }
+}
+
+// Call on startup, install, and initial worker evaluation
+configureSidePanel();
+
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('[NAKSHA Background] Service worker installed.');
+  configureSidePanel();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  console.log('[NAKSHA Background] Chrome startup.');
+  configureSidePanel();
 });
 
 // Handle clicking the extension toolbar action icon
@@ -18,8 +31,9 @@ chrome.action.onClicked.addListener(async (tab) => {
   if (tab?.id && chrome.sidePanel && chrome.sidePanel.open) {
     try {
       await chrome.sidePanel.open({ tabId: tab.id });
+      console.log('[NAKSHA Background] Successfully opened side panel for tab:', tab.id);
     } catch (e) {
-      console.warn('[NAKSHA Background] sidePanel.open direct call notice:', e);
+      console.warn('[NAKSHA Background] sidePanel.open notice:', e);
     }
   }
 });

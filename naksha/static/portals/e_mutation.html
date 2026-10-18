@@ -137,6 +137,30 @@
         }
         .btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text-main); }
         .btn-primary { background: var(--primary); color: white; }
+
+        /* Plot Selector Chips */
+        .plot-selector-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+        .chip {
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            background: #e2e8f0;
+            color: #334155;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: none;
+            font-family: inherit;
+        }
+        .chip.active {
+            background: #2563eb;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -161,6 +185,14 @@
     </header>
 
     <div class="portal-container">
+        <!-- Quick Demo Switcher -->
+        <div class="plot-selector-row">
+            <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">নমুনা প্লট নির্বাচন করুন:</span>
+            <button class="chip active" onclick="switchPlot('402', '120', 'MUT-2024-GZ-884', 'DEED-2024-DH-402', 'মোঃ আব্দুল করিম', '৬.০০', 'শুনানির অপেক্ষায় (Pending Hearing)')">দাগ ৪০২ (মূল পার্সেল)</button>
+            <button class="chip" onclick="switchPlot('401', '88', 'MUT-2021-GZ-401', 'DEED-2021-DH-401', 'মোঃ রহিম শেখ', '৪.৩৭', 'অনুমোদিত ও খতিয়ান সৃজিত (Approved)')">দাগ ৪০১ (অনুমোদিত নামজারি)</button>
+            <button class="chip" onclick="switchPlot('403', '125', 'MUT-2024-GZ-PENDING', 'DEED-2023-DH-403', 'আব্দুল মজিদ', '৫.৫৩', 'আবেদন দাখিল ও কর বকেয়া (Notice)')">দাগ ৪০৩ (শুনানি বিচারাধীন)</button>
+        </div>
+
         <!-- Mutation Case Record Card -->
         <section 
             id="naksha-portal-context" 
@@ -174,37 +206,37 @@
             data-khatian="120"
             data-case-id="MUT-2024-GZ-884"
             data-deed-no="DEED-2024-DH-402"
-            data-owner="Md. Abdul Karim"
+            data-owner="মোঃ আব্দুল করিম"
             data-area="6.0"
         >
             <div class="card-header">
                 <div>
-                    <h2>মিউটেশন কেস নম্বর: MUT-2024-GZ-884</h2>
+                    <h2>মিউটেশন কেস নম্বর: <span id="disp-case-id">MUT-2024-GZ-884</span></h2>
                     <p style="font-size: 0.8rem; color: #64748b;">মৌজা: কাশিমপুর · আবেদন দাখিল: ১২ মে ২০২৪</p>
                 </div>
-                <div class="status-pill">শুনানির অপেক্ষায় (Pending Hearing)</div>
+                <div class="status-pill" id="disp-status">শুনানির অপেক্ষায় (Pending Hearing)</div>
             </div>
 
             <div class="details-grid">
                 <div class="detail-box">
                     <div class="detail-label">দাগ নম্বর (Dag No.)</div>
-                    <div class="detail-val">বিএস ৪০২</div>
+                    <div class="detail-val" id="disp-dag">বিএস ৪০২</div>
                 </div>
                 <div class="detail-box">
                     <div class="detail-label">খতিয়ান নম্বর (Khatian No.)</div>
-                    <div class="detail-val">বিএস ১২০</div>
+                    <div class="detail-val" id="disp-khatian">বিএস ১২০</div>
                 </div>
                 <div class="detail-box">
                     <div class="detail-label">সাব-রেজিস্ট্রি দলিলের নম্বর</div>
-                    <div class="detail-val">DEED-2024-DH-402</div>
+                    <div class="detail-val" id="disp-deed">DEED-2024-DH-402</div>
                 </div>
                 <div class="detail-box">
                     <div class="detail-label">আবেদনকৃত জমির পরিমাণ</div>
-                    <div class="detail-val">৬.০০ শতক</div>
+                    <div class="detail-val" id="disp-area">৬.০০ শতক</div>
                 </div>
                 <div class="detail-box">
                     <div class="detail-label">আবেদনকারী / ক্রেতা</div>
-                    <div class="detail-val">মোঃ আব্দুল করিম (Md. Abdul Karim)</div>
+                    <div class="detail-val" id="disp-owner">মোঃ আব্দুল করিম</div>
                 </div>
                 <div class="detail-box">
                     <div class="detail-label">বিক্রেতা / পূর্বতন মালিক</div>
@@ -218,5 +250,32 @@
             </div>
         </section>
     </div>
+
+    <script>
+        function switchPlot(dag, khatian, caseId, deedNo, owner, area, statusText) {
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const ctx = document.getElementById('naksha-portal-context');
+            ctx.setAttribute('data-dag', dag);
+            ctx.setAttribute('data-khatian', khatian);
+            ctx.setAttribute('data-case-id', caseId);
+            ctx.setAttribute('data-deed-no', deedNo);
+            ctx.setAttribute('data-owner', owner);
+            ctx.setAttribute('data-area', area);
+
+            document.getElementById('disp-case-id').textContent = caseId;
+            document.getElementById('disp-dag').textContent = 'বিএস ' + dag;
+            document.getElementById('disp-khatian').textContent = 'বিএস ' + khatian;
+            document.getElementById('disp-deed').textContent = deedNo;
+            document.getElementById('disp-area').textContent = area + ' শতক';
+            document.getElementById('disp-owner').textContent = owner;
+            document.getElementById('disp-status').textContent = statusText;
+
+            window.dispatchEvent(new CustomEvent('naksha:plotChanged', {
+                detail: { dag, khatian, caseId, deedNo, owner, area }
+            }));
+        }
+    </script>
 </body>
 </html>

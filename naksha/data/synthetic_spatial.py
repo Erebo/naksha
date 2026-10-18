@@ -89,8 +89,25 @@ NEIGHBOR_403_COORDS = [
 ]
 
 
+def normalize_parcel_key(parcel_id: str) -> str:
+    """Normalizes any parcel ID, dag number, or alias to 401, 402, or 403."""
+    pid = str(parcel_id).strip().lower()
+    if "401" in pid:
+        return "401"
+    if "403" in pid:
+        return "403"
+    return "402"
+
+
 def get_synthetic_conflict_zone(parcel_id: str = "par-8f92-bd04-syn") -> Optional[SpatialConflictZone]:
-    """Computes the exact conflict zone where the deed claim overlaps the public Khas canal."""
+    """Computes the exact conflict zone where the deed claim overlaps the public Khas canal.
+    
+    Only Dag 402 has synthetic Khas canal encroachment. Dag 401 and 403 have no spatial canal conflict.
+    """
+    key = normalize_parcel_key(parcel_id)
+    if key != "402":
+        return None
+
     claim_geom = GeoJSONGeometry(type="Polygon", coordinates=DEED_CLAIM_402_COORDS)
     khas_geom = GeoJSONGeometry(type="Polygon", coordinates=KHAS_CANAL_COORDS)
 
@@ -111,16 +128,11 @@ def get_synthetic_conflict_zone(parcel_id: str = "par-8f92-bd04-syn") -> Optiona
 
 
 def get_synthetic_parcel_layers(parcel_id: str = "par-8f92-bd04-syn") -> List[SurveyLayerSnapshot]:
-    """Builds the 4-layer 2D GIS visual stack for the Naksha Side Panel:
-
-    Layer 1: Ancestral CS Dag 88 footprint (historical root)
-    Layer 2: Deed Claim boundary (6.0 decimals claimed)
-    Layer 3: DLRS surveyed ground truth (5.1 decimals polygon)
-    Layer 4: Computed conflict zone (0.9 decimals Khas canal overlap)
-    """
+    """Builds the 4-layer 2D GIS visual stack tailored for the requested parcel (401, 402, or 403)."""
+    key = normalize_parcel_key(parcel_id)
     layers: List[SurveyLayerSnapshot] = []
 
-    # 1. Ancestral CS Dag 88 Footprint
+    # 1. Ancestral CS Dag 88 Footprint (common historical ancestral root in Kashimpur)
     cs_geom = GeoJSONGeometry(type="Polygon", coordinates=CS_DAG_88_COORDS)
     cs_dec, cs_sqm = calculate_polygon_area(cs_geom)
     layers.append(
@@ -143,72 +155,156 @@ def get_synthetic_parcel_layers(parcel_id: str = "par-8f92-bd04-syn") -> List[Su
         )
     )
 
-    # 2. Registered Deed Claim Footprint
-    deed_geom = GeoJSONGeometry(type="Polygon", coordinates=DEED_CLAIM_402_COORDS)
-    deed_dec, deed_sqm = calculate_polygon_area(deed_geom)
-    layers.append(
-        SurveyLayerSnapshot(
-            layer_type=SpatialLayerType.DEED_CLAIM,
-            layer_name="২. সাব-রেজিস্ট্রি দলিলের দাবি (Deed Claim 6.00 dec)",
-            survey_era=SurveyEra.BS,
-            geometry=deed_geom,
-            properties={
-                "dag_number": "402",
-                "deed_number": "DEED-2024-DH-402",
-                "claimed_area_decimals": 6.00,
-                "calculated_area_decimals": deed_dec,
-                "calculated_area_sqm": deed_sqm,
-                "color": "#3b82f6",  # Blue
-                "stroke_style": "solid",
-                "description": "দলিল নং DEED-2024-DH-402 অনুযায়ী দাবিকৃত সীমানা",
-            },
-        )
-    )
+    if key == "401":
+        # Dag 401 (West neighbor: Clean 4.37 dec, no canal overlap)
+        n401_geom = GeoJSONGeometry(type="Polygon", coordinates=NEIGHBOR_401_COORDS)
+        n401_dec, n401_sqm = calculate_polygon_area(n401_geom)
 
-    # 3. DLRS Ground Truth Polygon
-    dlrs_geom = GeoJSONGeometry(type="Polygon", coordinates=DLRS_BS_402_COORDS)
-    dlrs_dec, dlrs_sqm = calculate_polygon_area(dlrs_geom)
-    layers.append(
-        SurveyLayerSnapshot(
-            layer_type=SpatialLayerType.GROUND_TRUTH,
-            layer_name="৩. ডিএলআরএস জরিপকৃত প্রকৃত নকশা (DLRS Ground Truth 5.10 dec)",
-            survey_era=SurveyEra.BS,
-            geometry=dlrs_geom,
-            properties={
-                "dag_number": "402",
-                "khatian_number": "120",
-                "survey_era": "BS",
-                "calculated_area_decimals": dlrs_dec,
-                "calculated_area_sqm": dlrs_sqm,
-                "color": "#10b981",  # Green
-                "stroke_style": "solid",
-                "description": "ডিএলআরএস ডিজিটাল বিএস জরিপকৃত প্রকৃত মাঠ সীমানা",
-            },
-        )
-    )
-
-    # 4. Conflict Zone (Khas Overlap)
-    conflict = get_synthetic_conflict_zone(parcel_id)
-    if conflict and conflict.geometry:
         layers.append(
             SurveyLayerSnapshot(
-                layer_type=SpatialLayerType.CONFLICT_ZONE,
-                layer_name="৪. বিরোধপূর্ণ এলাকা (Computed Conflict Zone 0.90 dec)",
+                layer_type=SpatialLayerType.DEED_CLAIM,
+                layer_name="২. সাব-রেজিস্ট্রি দলিলের দাবি (Deed Claim 4.37 dec)",
                 survey_era=SurveyEra.BS,
-                geometry=conflict.geometry,
+                geometry=n401_geom,
                 properties={
-                    "conflict_type": conflict.conflict_type,
-                    "area_in_decimals": conflict.area_in_decimals,
-                    "area_in_sq_meters": conflict.area_in_sq_meters,
-                    "color": "#ef4444",  # Red alert
-                    "fill_opacity": 0.6,
+                    "dag_number": "401",
+                    "deed_number": "DEED-2021-DH-401",
+                    "claimed_area_decimals": 4.37,
+                    "calculated_area_decimals": n401_dec,
+                    "calculated_area_sqm": n401_sqm,
+                    "color": "#3b82f6",
                     "stroke_style": "solid",
-                    "description": conflict.description,
+                    "description": "দলিল নং DEED-2021-DH-401 অনুযায়ী দাবিকৃত সীমানা (পরিমাপে সম্পূর্ণ মিলেছে)",
+                },
+            )
+        )
+        layers.append(
+            SurveyLayerSnapshot(
+                layer_type=SpatialLayerType.GROUND_TRUTH,
+                layer_name="৩. ডিএলআরএস জরিপকৃত প্রকৃত নকশা (DLRS Ground Truth 4.37 dec)",
+                survey_era=SurveyEra.BS,
+                geometry=n401_geom,
+                properties={
+                    "dag_number": "401",
+                    "khatian_number": "88",
+                    "survey_era": "BS",
+                    "calculated_area_decimals": n401_dec,
+                    "calculated_area_sqm": n401_sqm,
+                    "color": "#10b981",
+                    "stroke_style": "solid",
+                    "description": "ডিএলআরএস ডিজিটাল বিএস জরিপকৃত দাগ ৪০১ এর মাঠ সীমানা",
                 },
             )
         )
 
-    # 5. Public Khas Canal Boundary Layer
+    elif key == "403":
+        # Dag 403 (South neighbor: 5.53 dec, tax arrears scenario)
+        n403_geom = GeoJSONGeometry(type="Polygon", coordinates=NEIGHBOR_403_COORDS)
+        n403_dec, n403_sqm = calculate_polygon_area(n403_geom)
+
+        layers.append(
+            SurveyLayerSnapshot(
+                layer_type=SpatialLayerType.DEED_CLAIM,
+                layer_name="২. সাব-রেজিস্ট্রি দলিলের দাবি (Deed Claim 5.53 dec)",
+                survey_era=SurveyEra.BS,
+                geometry=n403_geom,
+                properties={
+                    "dag_number": "403",
+                    "deed_number": "DEED-2023-DH-403",
+                    "claimed_area_decimals": 5.53,
+                    "calculated_area_decimals": n403_dec,
+                    "calculated_area_sqm": n403_sqm,
+                    "color": "#3b82f6",
+                    "stroke_style": "solid",
+                    "description": "দলিল নং DEED-2023-DH-403 অনুযায়ী সীমানা (নামজারি আবেদন অপেক্ষমাণ)",
+                },
+            )
+        )
+        layers.append(
+            SurveyLayerSnapshot(
+                layer_type=SpatialLayerType.GROUND_TRUTH,
+                layer_name="৩. ডিএলআরএস জরিপকৃত প্রকৃত নকশা (DLRS Ground Truth 5.53 dec)",
+                survey_era=SurveyEra.BS,
+                geometry=n403_geom,
+                properties={
+                    "dag_number": "403",
+                    "khatian_number": "125",
+                    "survey_era": "BS",
+                    "calculated_area_decimals": n403_dec,
+                    "calculated_area_sqm": n403_sqm,
+                    "color": "#10b981",
+                    "stroke_style": "solid",
+                    "description": "ডিএলআরএস ডিজিটাল বিএস জরিপকৃত দাগ ৪০৩ এর মাঠ সীমানা",
+                },
+            )
+        )
+
+    else:
+        # Default: Dag 402 (Benchmark parcel with Khas canal conflict)
+        deed_geom = GeoJSONGeometry(type="Polygon", coordinates=DEED_CLAIM_402_COORDS)
+        deed_dec, deed_sqm = calculate_polygon_area(deed_geom)
+        layers.append(
+            SurveyLayerSnapshot(
+                layer_type=SpatialLayerType.DEED_CLAIM,
+                layer_name="২. সাব-রেজিস্ট্রি দলিলের দাবি (Deed Claim 6.00 dec)",
+                survey_era=SurveyEra.BS,
+                geometry=deed_geom,
+                properties={
+                    "dag_number": "402",
+                    "deed_number": "DEED-2024-DH-402",
+                    "claimed_area_decimals": 6.00,
+                    "calculated_area_decimals": deed_dec,
+                    "calculated_area_sqm": deed_sqm,
+                    "color": "#3b82f6",  # Blue
+                    "stroke_style": "solid",
+                    "description": "দলিল নং DEED-2024-DH-402 অনুযায়ী দাবিকৃত সীমানা",
+                },
+            )
+        )
+
+        dlrs_geom = GeoJSONGeometry(type="Polygon", coordinates=DLRS_BS_402_COORDS)
+        dlrs_dec, dlrs_sqm = calculate_polygon_area(dlrs_geom)
+        layers.append(
+            SurveyLayerSnapshot(
+                layer_type=SpatialLayerType.GROUND_TRUTH,
+                layer_name="৩. ডিএলআরএস জরিপকৃত প্রকৃত নকশা (DLRS Ground Truth 5.10 dec)",
+                survey_era=SurveyEra.BS,
+                geometry=dlrs_geom,
+                properties={
+                    "dag_number": "402",
+                    "khatian_number": "120",
+                    "survey_era": "BS",
+                    "calculated_area_decimals": dlrs_dec,
+                    "calculated_area_sqm": dlrs_sqm,
+                    "color": "#10b981",  # Green
+                    "stroke_style": "solid",
+                    "description": "ডিএলআরএস ডিজিটাল বিএস জরিপকৃত প্রকৃত মাঠ সীমানা",
+                },
+            )
+        )
+
+        # Conflict Zone (Khas Overlap) for Dag 402
+        conflict = get_synthetic_conflict_zone("402")
+        if conflict and conflict.geometry:
+            layers.append(
+                SurveyLayerSnapshot(
+                    layer_type=SpatialLayerType.CONFLICT_ZONE,
+                    layer_name="৪. বিরোধপূর্ণ এলাকা (Computed Conflict Zone 0.90 dec)",
+                    survey_era=SurveyEra.BS,
+                    geometry=conflict.geometry,
+                    properties={
+                        "conflict_type": conflict.conflict_type,
+                        "area_in_decimals": conflict.area_in_decimals,
+                        "area_in_sq_meters": conflict.area_in_sq_meters,
+                        "color": "#ef4444",  # Red alert
+                        "fill_opacity": 0.6,
+                        "stroke_style": "solid",
+                        "description": conflict.description,
+                    },
+                )
+            )
+
+    # Public Khas Canal Boundary Layer
     khas_geom = GeoJSONGeometry(type="Polygon", coordinates=KHAS_CANAL_COORDS)
     khas_dec, khas_sqm = calculate_polygon_area(khas_geom)
     layers.append(
@@ -230,7 +326,8 @@ def get_synthetic_parcel_layers(parcel_id: str = "par-8f92-bd04-syn") -> List[Su
 
 
 def get_synthetic_neighbor_parcels(parcel_id: str = "par-8f92-bd04-syn") -> GeoJSONFeatureCollection:
-    """Returns surrounding/neighboring plots for the LD Tax context map."""
+    """Returns surrounding/neighboring plots for the LD Tax context map, dynamically marking the target parcel."""
+    key = normalize_parcel_key(parcel_id)
     features: List[GeoJSONFeature] = []
 
     # Target Plot: BS 402
@@ -246,7 +343,7 @@ def get_synthetic_neighbor_parcels(parcel_id: str = "par-8f92-bd04-syn") -> GeoJ
                 "area_decimals": 5.10,
                 "tax_status": TaxPaymentStatus.PAID.value,
                 "tax_status_label": "পরিশোধিত (Paid)",
-                "is_target_parcel": True,
+                "is_target_parcel": (key == "402"),
                 "holding_number": "H-402",
             },
         )
@@ -265,7 +362,7 @@ def get_synthetic_neighbor_parcels(parcel_id: str = "par-8f92-bd04-syn") -> GeoJ
                 "area_decimals": 4.37,
                 "tax_status": TaxPaymentStatus.PAID.value,
                 "tax_status_label": "পরিশোধিত (Paid)",
-                "is_target_parcel": False,
+                "is_target_parcel": (key == "401"),
                 "holding_number": "H-401",
             },
         )
@@ -283,8 +380,8 @@ def get_synthetic_neighbor_parcels(parcel_id: str = "par-8f92-bd04-syn") -> GeoJ
                 "owner_name": "আব্দুল মজিদ (Abdul Majid)",
                 "area_decimals": 5.53,
                 "tax_status": TaxPaymentStatus.ARREARS.value,
-                "tax_status_label": "বকেয়া (Arrears)",
-                "is_target_parcel": False,
+                "tax_status_label": "বকেয়া (Arrears)",
+                "is_target_parcel": (key == "403"),
                 "holding_number": "H-403",
             },
         )

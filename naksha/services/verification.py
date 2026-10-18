@@ -13,6 +13,7 @@ from naksha.models.enums import (
     VerificationVerdict,
 )
 from naksha.normalization.text import strip_bangla_honorifics, phonetic_name_similarity
+from naksha.repository.base import BaseRecordRepository
 
 AREA_TOLERANCE_DECIMALS = 0.20  # Statutory area discrepancy threshold
 
@@ -298,6 +299,138 @@ def verify_record_against_cohort(
     return VerificationResult(
         canonical_parcel_id=primary.canonical_parcel_id,
         primary_record_id=primary.id,
+        compared_record_ids=compared_ids,
+        verdict=verdict,
+        summary=summary,
+        matches=all_matches,
+        discrepancies=all_discrepancies,
+        spatial_layers=spatial_layers,
+        is_synthetic=True,
+    )
+
+
+def verify_parcel_by_id(
+    parcel_id: str,
+    repo: BaseRecordRepository,
+) -> VerificationResult:
+    """Verifies a target parcel cohort dynamically from the repository.
+
+    Evaluates cross-agency records (Sub-Registry deed, AC Land mutation, DLRS ground truth,
+    LD Tax payment/arrears) and spatial conflicts, producing an evidence-backed statutory verdict:
+    - Dag 401: Fully matched records and paid tax -> CLEAR
+    - Dag 402: 0.90 dec Khas canal encroachment & paper area mismatch -> BLOCK
+    - Dag 403: Unmutated deed notice & 3-year tax arrears -> REVIEW
+    """
+    from naksha.data.synthetic_spatial import (
+        normalize_parcel_key,
+        get_synthetic_conflict_zone,
+        get_synthetic_parcel_layers,
+    )
+
+    key = normalize_parcel_key(parcel_id)
+    # Query all records claiming this dag
+    records = repo.list_records(dag=key)
+    if not records:
+        # Fallback to parcel ID match
+        all_recs = repo.list_records(limit=100)
+        records = [r for r in all_recs if r.canonical_parcel_id and key in r.canonical_parcel_id]
+
+    if not records:
+        from naksha.data.synthetic import generate_synthetic_records
+        all_recs = generate_synthetic_records()
+        records = [r for r in all_recs if r.dag_number and r.dag_number.normalized_value == key]
+
+    # Select primary record
+    primary = None
+    for r in records:
+        if r.source.agency == AgencyType.SUB_REGISTRY:
+            primary = r
+            break
+    if not primary:
+        for r in records:
+            if r.source.agency == AgencyType.AC_LAND:
+                primary = r
+                break
+    if not primary and records:
+        primary = records[0]
+
+    all_matches: List[RecordMatch] = []
+    all_discrepancies: List[Discrepancy] = []
+    compared_ids: List[str] = []
+
+    if primary:
+        all_discrepancies.extend(evaluate_record_completeness(primary))
+
+        for candidate in records:
+            if candidate.id == primary.id:
+                continue
+            compared_ids.append(candidate.id)
+            match, discs = compare_records(primary, candidate)
+            if match:
+                all_matches.append(match)
+            all_discrepancies.extend(discs)
+
+    # Check unmutated deed: deed exists without corresponding mutation
+    agencies_present = {r.source.agency for r in records}
+    target_rec_id = primary.id if primary else f"PARCEL-{key}"
+    if AgencyType.SUB_REGISTRY in agencies_present and AgencyType.AC_LAND not in agencies_present:
+        all_discrepancies.append(
+            Discrepancy(
+                discrepancy_type=DiscrepancyType.UNMUTATED_DEED,
+                severity=DiscrepancySeverity.WARNING,
+                field_name="mutation_record",
+                record_a_id=target_rec_id,
+                difference_description="সাব-রেজিস্ট্রি দলিলের বিপরীতে এসি ল্যান্ড অফিসে নামজারি (e-Mutation) রেকর্ড পাওয়া যায়নি।",
+            )
+        )
+
+    # Check land development tax arrears and classification mismatch
+    for r in records:
+        if r.source.agency == AgencyType.UNION_LAND_OFFICE and r.source.notes and "arrears" in r.source.notes.lower():
+            all_discrepancies.append(
+                Discrepancy(
+                    discrepancy_type=DiscrepancyType.INCOMPLETE_RECORD,
+                    severity=DiscrepancySeverity.WARNING,
+                    field_name="tax_status",
+                    record_a_id=r.id,
+                    difference_description="বিগত ৩ অর্থবছরের ভূমি উন্নয়ন কর বকেয়া রয়েছে (Arrears)। নামজারির পূর্বে বকেয়া কর আদায় প্রযোজ্য।",
+                )
+            )
+
+    # Check spatial Khas conflict from spatial engine
+    khas_conflict = get_synthetic_conflict_zone(parcel_id)
+    if khas_conflict:
+        all_discrepancies.append(
+            Discrepancy(
+                discrepancy_type=DiscrepancyType.GEOMETRIC_OVERLAP,
+                severity=DiscrepancySeverity.BLOCKING,
+                field_name="geometry",
+                record_a_id=target_rec_id,
+                difference_description=khas_conflict.description,
+                spatial_conflict=khas_conflict,
+            )
+        )
+
+    # Determine verdict
+    has_blocking = any(d.severity == DiscrepancySeverity.BLOCKING for d in all_discrepancies)
+    has_warning = any(d.severity == DiscrepancySeverity.WARNING for d in all_discrepancies)
+
+    if has_blocking:
+        verdict = VerificationVerdict.BLOCK
+        summary = f"ব্লক (BLOCK): {len(all_discrepancies)}টি গুরুতর অসংগতি ও বিরোধ পাওয়া গেছে। সরকারি খাস খাল দখল বা সীমানা অমিল নিষ্পত্তির পূর্বে নামজারি সাময়িক স্থগিত।"
+    elif has_warning:
+        verdict = VerificationVerdict.REVIEW
+        summary = f"রিভিউ (REVIEW): {len(all_discrepancies)}টি প্রশাসনিক বা কর বকেয়া নোটিশ রয়েছে। নামজারি শুনানির পূর্বে বকেয়া কর ও শ্রেণি অসংগতি নিষ্পত্তি প্রযোজ্য।"
+    else:
+        verdict = VerificationVerdict.CLEAR
+        summary = f"ক্লিয়ার (CLEAR): সকল সংস্থার রেকর্ড ও সরজমিন সীমানা সম্পূর্ণ নির্ভুল। কোনো সরকারি খাস ভূমির সাথে বিরোধ নেই এবং চলতি অর্থবছর পর্যন্ত কর সম্পূর্ণ পরিশোধিত।"
+
+    spatial_layers = get_synthetic_parcel_layers(parcel_id)
+    canonical_id = f"BS-{key}"
+
+    return VerificationResult(
+        canonical_parcel_id=canonical_id,
+        primary_record_id=primary.id if primary else f"PARCEL-{key}",
         compared_record_ids=compared_ids,
         verdict=verdict,
         summary=summary,

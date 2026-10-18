@@ -30,14 +30,16 @@
     "scripting"
   ],
   "host_permissions": [
-    "http://127.0.0.1:8000/*",
-    "http://localhost:8000/*"
+    "http://127.0.0.1:*/*",
+    "http://localhost:*/*"
   ],
   "content_scripts": [
     {
       "matches": [
         "http://127.0.0.1:8000/portals/*",
-        "http://localhost:8000/portals/*"
+        "http://localhost:8000/portals/*",
+        "http://127.0.0.1:*/portals/*",
+        "http://localhost:*/portals/*"
       ],
       "js": [
         "content.js"
@@ -45,7 +47,7 @@
       "css": [
         "content.css"
       ],
-      "run_at": "document_idle"
+      "run_at": "document_end"
     }
   ]
 }

@@ -79,12 +79,36 @@
     const openBtn = pill.querySelector('#naksha-pill-open-btn');
     openBtn.addEventListener('click', () => {
       chrome.runtime.sendMessage({ type: 'NAKSHA_OPEN_SIDEPANEL' }, (res) => {
-        // Fallback alert for browsers requiring user to click extension icon
         if (chrome.runtime.lastError || !res || res.status !== 'opened') {
-          console.log('[NAKSHA] Opening side panel: please click the NAKSHA icon in Chrome toolbar or side panel.');
+          // If browser requires user action on extension toolbar directly, show clear Bangla guidance
+          showPanelGuideToast();
         }
       });
     });
+  }
+
+  function showPanelGuideToast() {
+    if (document.getElementById('naksha-guide-toast')) return;
+    const toast = document.createElement('div');
+    toast.id = 'naksha-guide-toast';
+    toast.className = 'naksha-toast-container';
+    toast.innerHTML = `
+      <div class="naksha-toast-header">
+        <strong>📌 নকশা (NAKSHA) সাইড প্যানেল নির্দেশিকা</strong>
+        <span class="naksha-toast-close" onclick="this.parentElement.parentElement.remove()">✕</span>
+      </div>
+      <p style="margin: 6px 0; font-size: 12px; line-height: 1.4;">
+        ক্রোম ব্রাউজারের সাইড প্যানেল স্বয়ংক্রিয়ভাবে খোলার জন্য ব্রাউজারের উপরের ডানদিকের 
+        <strong>এক্সটেনশন (NAKSHA) আইকনটিতে ক্লিক করুন</strong> অথবা ক্রোম সাইড প্যানেল মেন্যু থেকে <strong>নকশা</strong> নির্বাচন করুন।
+      </p>
+      <div style="font-size: 11px; color: #94a3b8;">
+        (সাইড প্যানেল একবার খুললে এটি পোর্টালটির পাশেই দৃশ্যমান থাকবে এবং প্রতিটি দাগ পরিবর্তনের সাথে স্বয়ংক্রিয়ভাবে ম্যাপ হালনাগাদ হবে।)
+      </div>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      if (toast && toast.parentElement) toast.remove();
+    }, 8000);
   }
 
   function updateFloatingBadgeText(context) {
@@ -94,12 +118,36 @@
     }
   }
 
-  // Initial detection when page is ready
-  const initialContext = extractPortalContext();
-  if (initialContext) {
-    console.log('[NAKSHA Content Script] Identified plot:', initialContext);
-    notifyExtension(initialContext, 'NAKSHA_PLOT_DETECTED');
-    injectFloatingBadge(initialContext);
+  function initPortalDetection() {
+    const ctx = extractPortalContext();
+    if (ctx) {
+      console.log('[NAKSHA Content Script] Identified plot:', ctx);
+      notifyExtension(ctx, 'NAKSHA_PLOT_DETECTED');
+      injectFloatingBadge(ctx);
+    } else {
+      // Retry in 200ms if DOM is still being rendered
+      setTimeout(initPortalDetection, 200);
+      return;
+    }
+
+    const targetNode = document.getElementById('naksha-portal-context');
+    if (targetNode) {
+      const observer = new MutationObserver(() => {
+        const updated = extractPortalContext();
+        if (updated) {
+          notifyExtension(updated, 'NAKSHA_PLOT_CHANGED');
+          updateFloatingBadgeText(updated);
+        }
+      });
+      observer.observe(targetNode, { attributes: true });
+    }
+  }
+
+  // Run on DOM ready or immediately if document is already loaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPortalDetection);
+  } else {
+    initPortalDetection();
   }
 
   // Listen for dynamic plot switching events on the mock portal
@@ -111,17 +159,4 @@
       updateFloatingBadgeText(updated);
     }
   });
-
-  // Observe DOM changes if attributes on #naksha-portal-context change
-  const targetNode = document.getElementById('naksha-portal-context');
-  if (targetNode) {
-    const observer = new MutationObserver(() => {
-      const updated = extractPortalContext();
-      if (updated) {
-        notifyExtension(updated, 'NAKSHA_PLOT_CHANGED');
-        updateFloatingBadgeText(updated);
-      }
-    });
-    observer.observe(targetNode, { attributes: true });
-  }
 })();

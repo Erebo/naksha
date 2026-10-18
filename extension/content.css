@@ -84,3 +84,40 @@
 .naksha-pill-btn:hover {
   background: #1d4ed8;
 }
+
+.naksha-toast-container {
+  position: fixed;
+  bottom: 85px;
+  right: 24px;
+  z-index: 9999999;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid #3b82f6;
+  border-radius: 12px;
+  padding: 14px 18px;
+  max-width: 360px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  font-family: 'Hind Siliguri', -apple-system, BlinkMacSystemFont, sans-serif;
+  animation: naksha-slide-up 0.3s ease-out;
+}
+
+.naksha-toast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #60a5fa;
+  font-size: 13px;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 6px;
+}
+
+.naksha-toast-close {
+  cursor: pointer;
+  color: #94a3b8;
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.naksha-toast-close:hover {
+  color: white;
+}

@@ -256,3 +256,35 @@ def test_spatial_verification_integration():
     # Check that spatial_layers are attached to verification result
     assert result.spatial_layers is not None
     assert len(result.spatial_layers) >= 4
+
+
+def test_api_parcel_verification_dynamic_verdicts():
+    """GET /api/v1/spatial/parcels/{id}/verification returns dynamic verdicts:
+    Dag 401 -> CLEAR
+    Dag 402 -> BLOCK (Khas canal conflict)
+    Dag 403 -> REVIEW (Arrears & class conflict)
+    """
+    # 1. Test Dag 401
+    res_401 = client.get("/api/v1/spatial/parcels/401/verification")
+    assert res_401.status_code == 200
+    v401 = res_401.json()
+    assert v401["verdict"] == "CLEAR"
+    assert len(v401["discrepancies"]) == 0
+    assert v401["is_synthetic"] is True
+
+    # 2. Test Dag 402
+    res_402 = client.get("/api/v1/spatial/parcels/402/verification")
+    assert res_402.status_code == 200
+    v402 = res_402.json()
+    assert v402["verdict"] == "BLOCK"
+    disc_types_402 = [d["discrepancy_type"] for d in v402["discrepancies"]]
+    assert "GEOMETRIC_OVERLAP" in disc_types_402
+
+    # 3. Test Dag 403
+    res_403 = client.get("/api/v1/spatial/parcels/403/verification")
+    assert res_403.status_code == 200
+    v403 = res_403.json()
+    assert v403["verdict"] == "REVIEW"
+    disc_types_403 = [d["discrepancy_type"] for d in v403["discrepancies"]]
+    assert "INCOMPLETE_RECORD" in disc_types_403 or "UNMUTATED_DEED" in disc_types_403
+

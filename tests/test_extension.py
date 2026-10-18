@@ -51,6 +51,8 @@ def test_extension_required_files_exist():
         "icons/icon16.png",
         "icons/icon48.png",
         "icons/icon128.png",
+        "vendor/leaflet/leaflet.js",
+        "vendor/leaflet/leaflet.css",
     ]
 
     for rel_path in required_files:
@@ -78,3 +80,42 @@ def test_sidepanel_html_contract():
     assert "Ed25519" in html
     # Synthetic notice
     assert "কৃত্রিম ডেমো ডেটা" in html
+
+
+def test_sidepanel_mv3_csp_compliance():
+    """Verify sidepanel.html complies with Chrome MV3 CSP by executing no remote scripts."""
+    sidepanel_file = EXTENSION_DIR / "sidepanel.html"
+    html = sidepanel_file.read_text(encoding="utf-8")
+
+    # All script src must be local relative paths, no remote CDNs
+    import re
+    script_srcs = re.findall(r'<script\s+[^>]*src=["\']([^"\']+)["\']', html)
+    for src in script_srcs:
+        assert not src.startswith("http://") and not src.startswith("https://"), (
+            f"Remote script src '{src}' violates Chrome Extension Manifest V3 CSP"
+        )
+    assert any("vendor/leaflet/leaflet.js" in s for s in script_srcs)
+
+
+def test_extension_uses_clean_osm_tilelayer_without_carto_watermark():
+    """Verify sidepanel.js uses OpenStreetMap and has no API-key-required CartoDB watermark."""
+    sidepanel_js = (EXTENSION_DIR / "sidepanel.js").read_text(encoding="utf-8")
+    assert "tile.openstreetmap.org" in sidepanel_js
+    assert "cartocdn.com" not in sidepanel_js
+
+
+def test_extension_resilience_and_timeout_protection():
+    """Verify sidepanel.js has AbortController timeout and Leaflet existence guards."""
+    sidepanel_js = (EXTENSION_DIR / "sidepanel.js").read_text(encoding="utf-8")
+    assert "AbortController" in sidepanel_js
+    assert "typeof L === 'undefined'" in sidepanel_js
+    assert "sp-tile-warning" in sidepanel_js
+    assert "resolveParcelId" in sidepanel_js
+
+
+def test_extension_content_script_sidepanel_guidance():
+    """Verify content.js contains Bangla guidance toast if programmatic sidepanel is restricted."""
+    content_js = (EXTENSION_DIR / "content.js").read_text(encoding="utf-8")
+    assert "showPanelGuideToast" in content_js
+    assert "নকশা (NAKSHA) সাইড প্যানেল নির্দেশিকা" in content_js
+    assert "NAKSHA_OPEN_SIDEPANEL" in content_js

@@ -125,24 +125,51 @@ Stage 5 delivers the zero-integration side panel experience for land officers:
   * **Content Script (`content.js` & `content.css`)**: Injected into the local mock portal domains (`http://127.0.0.1:8000/portals/*`). Detects plot identifiers from the active page, listens to dynamic plot switching, and renders a floating Bangla NAKSHA launcher badge.
   * **Interactive GIS Side Panel (`sidepanel.html`, `sidepanel.css`, `sidepanel.js`)**: Custom-tailored for the Chrome Side Panel drawer width (~380px). Renders the full Leaflet 2D GIS map with toggleable multi-era layers (CS 88 ancestral footprint, Deed claim, DLRS survey, Khas canal conflict zone), neighbor tax statuses, and discrepancy explainers.
 
-### 🔌 Chrome Extension Demo Instructions
-1. Open Google Chrome and navigate to `chrome://extensions/`.
-2. Enable **Developer mode** using the toggle switch in the top-right corner.
-3. Click the **Load unpacked** button in the top-left toolbar.
-4. Select the `extension/` folder inside this repository: `c:\Users\user\Desktop\P\naksha\extension`.
-5. Start the NAKSHA FastAPI backend:
-   ```bash
-   uvicorn naksha.api.app:app --reload --host 127.0.0.1 --port 8000
-   ```
-6. Open the synthetic LD Tax portal in Chrome:
-   [http://127.0.0.1:8000/portals/ld-tax](http://127.0.0.1:8000/portals/ld-tax)
-7. Observe the floating **নকশা** badge at the bottom right corner with identified plot details (`দাগ ৪০২`).
-8. Click the Chrome Extensions puzzle icon (or the NAKSHA toolbar icon) and select **Open Side Panel**.
-9. The NAKSHA side panel opens alongside the portal, immediately rendering:
-   * Real-time detected plot identifiers (মৌজা কাশিমপুর, দাগ ৪০২, খতিয়ান ১২০).
-   * Interactive Leaflet 2D GIS map showing the 4 layers: purple CS 88 boundary, blue deed claim, green DLRS survey, and red Khas canal conflict zone.
-   * Clear Bangla explanation of the 0.90 decimal Khas canal encroachment and the automated BLOCK verdict.
-10. Click different plot chips on the mock portal (e.g. `দাগ ৪০৩` or `দাগ ৪০১`); notice the extension seamlessly synchronizes with the active plot.
+### 🔌 Hackathon Step-by-Step Demonstration Walkthrough
+
+Follow this exact script for a 100% reproducible live presentation:
+
+#### Step 1: Start the Backend Server
+```bash
+# In project root with active venv:
+uvicorn naksha.api.app:app --reload --host 127.0.0.1 --port 8000
+```
+Verify readiness at `http://127.0.0.1:8000/health` (`"status": "ok"`).
+
+#### Step 2: Install Unpacked Chrome Extension
+1. Open Google Chrome and visit `chrome://extensions/`.
+2. Toggle **Developer mode** to ON in the upper-right corner.
+3. Click **Load unpacked** (top-left) and select `c:\Users\user\Desktop\P\naksha\extension`.
+4. The **নকশা (NAKSHA)** icon will appear in your Chrome toolbar.
+
+#### Step 3: Open the Synthetic LD Tax Portal & Launch NAKSHA
+1. Navigate to: [http://127.0.0.1:8000/portals/ld-tax](http://127.0.0.1:8000/portals/ld-tax).
+2. The page loads with Bangladeshi Bangla typography (`Hind Siliguri`) displaying holding `H-402`.
+3. Notice the floating **নকশা** launcher pill at the bottom-right showing `প্লট শনাক্ত: দাগ ৪০২`.
+4. Click the NAKSHA icon in the toolbar or click **Side Panel** in Chrome to open the side panel.
+
+#### Step 4: Inspect Plot Scenarios
+
+| Action on Mock Portal | Expected Detection | Side Panel GIS & Findings | Statutory Decision |
+| :--- | :--- | :--- | :--- |
+| **Select দাগ ৪০২** *(Default)* | মৌজা কাশিমপুর, দাগ ৪০২, খতিয়ান ১২০ | Renders 4 layers (purple CS 88, blue deed claim, green DLRS survey, red conflict zone). Highlights **০.৯০ শতক** canal encroachment into public Khas land. | **ব্লক (BLOCK)** — নামজারি স্থগিত |
+| **Click দাগ ৪০১ Chip** *(West Neighbor)* | মৌজা কাশিমপুর, দাগ ৪০১, খতিয়ান ৮৮ | Re-centers map on Dag 401 polygon (৪.৩৭ শতক). Clears conflict alert; confirms LD Tax paid and boundary in order. | **ক্লিয়ার (CLEAR)** — নিয়মিত খাজনা পরিশোধিত |
+| **Click দাগ ৪০৩ Chip** *(South Neighbor)* | মৌজা কাশিমপুর, দাগ ৪০৩, খতিয়ান ১২৫ | Re-centers map on Dag 403 polygon (৫.৫৩ শতক). Shows amber warning for 3 years tax arrears and khatian divergence. | **রিভিউ (REVIEW)** — বকেয়া কর নোটিশ প্রযোজ্য |
+
+#### Step 5: Verify the Cryptographic Trust Ledger
+1. In the side panel, click the **অডিট লেজার (Ed25519)** tab.
+2. Observe the immutable append-only chain blocks (`ব্লক #1`, `ব্লক #2`, etc.).
+3. Each block displays the queried Dag, timestamp, decision verdict, SHA-256 hash digest, and verified `Ed25519` signature.
+4. Verify via API: [http://127.0.0.1:8000/api/v1/ledger/verify](http://127.0.0.1:8000/api/v1/ledger/verify) (`"is_valid": true`).
+
+#### Step 6: Test the e-Mutation Portal
+1. Navigate to: [http://127.0.0.1:8000/portals/e-mutation](http://127.0.0.1:8000/portals/e-mutation).
+2. The detection bar updates immediately to `ই-নামজারি পোর্টাল` with mutation case `MUT-2024-GZ-884` and Sub-Registry deed `DEED-2024-DH-402`.
+
+#### ⚠️ Troubleshooting & FAQ
+* **Side panel does not open automatically on button click**: In Chrome 116+, click the NAKSHA icon in your extension toolbar directly or click the Chrome Side Panel dropdown and choose **নকশা**.
+* **Port 8000 already in use**: Pass `--port 8080` to uvicorn and reload the extension (manifest permits `localhost` and `127.0.0.1`).
+* **Tile layer loading**: The Leaflet map uses OpenStreetMap (`tile.openstreetmap.org`) without API keys or watermarks; an active internet connection renders base tiles, while all cadastral GeoJSON polygons and conflict zones are calculated and served 100% locally from FastAPI.
 
 ---
 

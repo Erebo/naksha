@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <!-- Leaflet CSS (Local Bundle for MV3 CSP Compliance) -->
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
 
   <!-- Sidepanel Custom Styles -->
   <link rel="stylesheet" href="sidepanel.css">
@@ -64,7 +64,12 @@
     <!-- Map Loading Overlay -->
     <div id="sp-map-loader" class="sp-map-overlay">
       <div class="sp-spinner"></div>
-      <p>২ডি ক্যাডাস্ট্রাল স্তরসমূহ লোড হচ্ছে...</p>
+      <p id="sp-map-loader-text">২ডি ক্যাডাস্ট্রাল স্তরসমূহ লোড হচ্ছে...</p>
+    </div>
+
+    <!-- Offline Basemap Warning Toast -->
+    <div id="sp-tile-warning" class="sp-tile-warning hidden">
+      ⚠️ ইন্টারনেট না থাকায় বেসম্যাপ বন্ধ; অফলাইন ভেক্টর ক্যাডাস্ট্রাল মোড সক্রিয়
     </div>
 
     <!-- Map Error Overlay -->
@@ -187,8 +192,8 @@
     </div>
   </div>
 
-  <!-- Leaflet JS from CDN -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Leaflet JS (Local Bundle for MV3 CSP Compliance) -->
+  <script src="vendor/leaflet/leaflet.js"></script>
   <!-- Sidepanel Logic -->
   <script src="sidepanel.js"></script>
 </body>

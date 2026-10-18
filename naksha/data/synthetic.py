@@ -286,7 +286,49 @@ def generate_synthetic_records() -> List[LandRecord]:
     )
     records.append(rec_incomplete)
 
-    # 6. West Neighbor Record: BS Dag 401 (Paid Tax, Clean Ownership)
+    # 6. West Neighbor Cohort: BS Dag 401 (Paid Tax, Clean Ownership -> CLEAR)
+    rec_401_deed = _create_record(
+        record_id="SYN-401-DEED-01",
+        agency=AgencyType.SUB_REGISTRY,
+        doc_type="Saf Kabala Deed (সাব-কবলা দলিল)",
+        source_ref_id="DEED-2021-DH-401",
+        mouza="Kashimpur",
+        upazila="Gazipur Sadar",
+        district="Gazipur",
+        jl_no="28",
+        survey_era=SurveyEra.BS,
+        raw_dag="401",
+        raw_khatian="88",
+        raw_owner="মোঃ রহিম শেখ (Md. Rahim Sheikh)",
+        raw_area=4.37,
+        area_unit=LandAreaUnit.DECIMAL,
+        land_class=LandClass.NAL,
+        canonical_parcel_id="par-401-west-syn",
+        notes="Registered purchase deed for plot 401.",
+    )
+    records.append(rec_401_deed)
+
+    rec_401_mut = _create_record(
+        record_id="SYN-401-MUT-01",
+        agency=AgencyType.AC_LAND,
+        doc_type="Mutation Khatian (নামজারি খতিয়ান)",
+        source_ref_id="MUT-2021-GZ-401",
+        mouza="Kashimpur",
+        upazila="Gazipur Sadar",
+        district="Gazipur",
+        jl_no="28",
+        survey_era=SurveyEra.BS,
+        raw_dag="401",
+        raw_khatian="88",
+        raw_owner="মোঃ রহিম শেখ (Md. Rahim Sheikh)",
+        raw_area=4.37,
+        area_unit=LandAreaUnit.DECIMAL,
+        land_class=LandClass.NAL,
+        canonical_parcel_id="par-401-west-syn",
+        notes="Duly sanctioned e-Mutation case for plot 401.",
+    )
+    records.append(rec_401_mut)
+
     rec_401 = _create_record(
         record_id="SYN-401-TAX-01",
         agency=AgencyType.UNION_LAND_OFFICE,
@@ -309,7 +351,28 @@ def generate_synthetic_records() -> List[LandRecord]:
     )
     records.append(rec_401)
 
-    # 7. South Neighbor Record: BS Dag 403 (Arrears & Payer Mismatch Hazard)
+    # 7. South Neighbor Cohort: BS Dag 403 (Arrears & Unmutated Deed -> REVIEW)
+    rec_403_deed = _create_record(
+        record_id="SYN-403-DEED-01",
+        agency=AgencyType.SUB_REGISTRY,
+        doc_type="Saf Kabala Deed (সাব-কবলা দলিল)",
+        source_ref_id="DEED-2023-DH-403",
+        mouza="Kashimpur",
+        upazila="Gazipur Sadar",
+        district="Gazipur",
+        jl_no="28",
+        survey_era=SurveyEra.BS,
+        raw_dag="403",
+        raw_khatian="125",
+        raw_owner="আব্দুল মজিদ (Abdul Majid)",
+        raw_area=5.53,
+        area_unit=LandAreaUnit.DECIMAL,
+        land_class=LandClass.NAL,
+        canonical_parcel_id="par-403-south-syn",
+        notes="Unmutated deed: registered deed with no corresponding mutation record in AC Land.",
+    )
+    records.append(rec_403_deed)
+
     rec_403 = _create_record(
         record_id="SYN-403-TAX-01",
         agency=AgencyType.UNION_LAND_OFFICE,
@@ -325,7 +388,7 @@ def generate_synthetic_records() -> List[LandRecord]:
         raw_owner="আব্দুল মজিদ (Abdul Majid)",
         raw_area=5.53,
         area_unit=LandAreaUnit.DECIMAL,
-        land_class=LandClass.NAL,
+        land_class=LandClass.VITI,  # Land classification mismatch (Viti vs Nal)
         canonical_parcel_id="par-403-south-syn",
         holding_no="H-403",
         notes="South neighbor plot BS 403; land development tax in arrears for 3 fiscal years.",
