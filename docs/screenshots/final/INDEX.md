@@ -7,6 +7,7 @@
 
 | # | File Name | Description | Scenario | Language | Theme | Viewport |
 |---|---|---|---|---|---|---|
+| **00** | [`00_chrome_extension_loaded.png`](./00_chrome_extension_loaded.png) | Chrome MV3 unpacked extension active in `chrome://extensions` | Extension Deployment | বাংলা (BN) / EN | Dark (OS) | `1024x563` |
 | **01** | [`01_portal_logged_in.png`](./01_portal_logged_in.png) | Mock LD Tax portal logged in as UL-2024-KSH, 'যাচাই করুন' pill visible | Normal Portal Session | বাংলা (BN) | Light (Portal) | `1440x900` |
 | **02** | [`02_portal_pill_closeup.png`](./02_portal_pill_closeup.png) | Close-up bounding box of floating Naksha pill on the portal | Normal Portal Session | বাংলা (BN) | Light (Portal) | `Clip to Element` |
 | **03** | [`03_portal_demo_officer_dropdown.png`](./03_portal_demo_officer_dropdown.png) | 'Demo: officer' dropdown active in the yellow demo banner | Officer Switcher | বাংলা (BN) | Light (Portal) | `1440x900` |

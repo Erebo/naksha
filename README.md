@@ -101,10 +101,18 @@ flowchart TB
 
 ## 🖼️ Screenshots
 
-### Portal Integration → Security Gate → Verification Cockpit
+### Extension Deployment → Portal Integration → Security Gate → Verification Cockpit
 
 <table>
 <tr>
+<td width="50%">
+
+**Chrome Extension (MV3) Active**
+Unpacked extension loaded in Developer Mode (`chrome://extensions`)
+
+![Chrome Extension](docs/screenshots/final/00_chrome_extension_loaded.png)
+
+</td>
 <td width="50%">
 
 **Mock Government Portal**
@@ -113,22 +121,14 @@ Officer session with floating "যাচাই করুন" pill
 ![Portal](docs/screenshots/final/01_portal_logged_in.png)
 
 </td>
-<td width="50%">
+</tr>
+<tr>
+<td>
 
 **Security Verification Gate**
 Automatic 3-step identity check
 
 ![Verification](docs/screenshots/final/05_verify_identity_card_verified.png)
-
-</td>
-</tr>
-<tr>
-<td>
-
-**Cockpit — BLOCK Verdict (EN)**
-Khas canal overlap detected on Dag 402
-
-![Cockpit EN](docs/screenshots/final/20_cockpit_english_mode.png)
 
 </td>
 <td>
@@ -143,10 +143,28 @@ Unauthorized `EXT-999-HACK` blocked
 <tr>
 <td>
 
+**Cockpit — BLOCK Verdict (EN)**
+Khas canal overlap detected on Dag 402
+
+![Cockpit EN](docs/screenshots/final/20_cockpit_english_mode.png)
+
+</td>
+<td>
+
 **Multi-Era Layer Popover**
 5 cadastral layers — CS·Deed·DLRS·Khas·Conflict
 
 ![Layers](docs/screenshots/final/08_map_layers_popover_all_active.png)
+
+</td>
+</tr>
+<tr>
+<td>
+
+**Lineage History Track**
+CS→SA→RS→BS chain + phonetic name match
+
+![History](docs/screenshots/final/12_tab_history_lineage_graph.png)
 
 </td>
 <td>
@@ -161,10 +179,10 @@ SHA-256 + Ed25519 signed blocks
 <tr>
 <td>
 
-**Lineage History Track**
-CS→SA→RS→BS chain + phonetic name match
+**Scenario 401 — CLEAR Verdict**
+Full statutory compliance across all 5 agencies
 
-![History](docs/screenshots/final/12_tab_history_lineage_graph.png)
+![Scenario 401 Clear](docs/screenshots/final/17_scenario_401_clear.png)
 
 </td>
 <td>
