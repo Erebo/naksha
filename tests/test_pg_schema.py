@@ -33,8 +33,10 @@ pytestmark = [pytest.mark.postgres]
 def get_verified_test_db_url() -> str:
     """Retrieve test DB URL, enforcing safety check that DB name ends with '_test'."""
     settings = get_settings()
-    url = settings.test_database_url or os.environ.get("NAKSHA_TEST_DATABASE_URL")
-    if not url:
+    url = os.environ.get("NAKSHA_TEST_DATABASE_URL")
+    if url is None:
+        url = settings.test_database_url
+    if not url or url.strip().lower() in ("none", "disabled", "false", "0"):
         pytest.skip("NAKSHA_TEST_DATABASE_URL is not configured; skipping postgres tests")
 
     parsed = make_url(url)
@@ -45,7 +47,7 @@ def get_verified_test_db_url() -> str:
         )
 
     try:
-        engine = create_engine(url, pool_pre_ping=True)
+        engine = create_engine(url, pool_pre_ping=True, connect_args={"connect_timeout": 2})
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
     except Exception as exc:

@@ -78,4 +78,4 @@ def get_settings() -> Settings:
     return Settings()
 
 
-settings = Settings()
+settings = get_settings()
