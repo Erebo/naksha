@@ -478,5 +478,19 @@ def test_production_startup_fails_with_default_secret_key(monkeypatch):
 
     # But succeeds with a strong production key
     monkeypatch.setenv("NAKSHA_SECRET_KEY", "a-secure-randomly-generated-production-secret-key-123456789")
+    monkeypatch.setenv("NAKSHA_NID_HMAC_SECRET", "a-secure-randomly-generated-nid-hmac-salt-key-123456789")
     prod_settings = Settings()
     assert prod_settings.environment == "production"
+
+
+def test_production_startup_fails_with_default_nid_hmac_secret(monkeypatch):
+    """Settings initialization fails in production if nid_hmac_secret equals default."""
+    from naksha.core.config import DEFAULT_DEV_NID_SECRET
+
+    monkeypatch.setenv("NAKSHA_ENVIRONMENT", "production")
+    monkeypatch.setenv("NAKSHA_SECRET_KEY", "a-secure-production-secret-key-987654321")
+    monkeypatch.setenv("NAKSHA_NID_HMAC_SECRET", DEFAULT_DEV_NID_SECRET)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Settings()
+    assert "Insecure default nid_hmac_secret cannot be used in environment 'production'" in str(exc_info.value)

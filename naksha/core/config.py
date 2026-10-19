@@ -4,8 +4,10 @@ from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_DEV_SECRET = "dev-insecure-secret-key-change-in-production"
+DEFAULT_DEV_NID_SECRET = "dev-insecure-nid-salt-key-change-in-production"
 DB_DIR = Path(__file__).resolve().parent.parent.parent
 DEFAULT_SQLITE_URL = f"sqlite:///{DB_DIR / 'naksha_spatial.db'}"
+DEFAULT_TEST_POSTGRES_URL = "postgresql+psycopg://naksha_dev:naksha_dev_pw@localhost:5432/naksha_test"
 
 
 class Settings(BaseSettings):
@@ -22,9 +24,11 @@ class Settings(BaseSettings):
     synthetic_mode: bool = True
     environment: str = "development"
     database_url: str = DEFAULT_SQLITE_URL
+    test_database_url: str | None = DEFAULT_TEST_POSTGRES_URL
 
     # Authentication & Security
     secret_key: str = DEFAULT_DEV_SECRET
+    nid_hmac_secret: str = DEFAULT_DEV_NID_SECRET
     jwt_issuer: str = "naksha-auth-service"
     jwt_expiry_seconds: int = 900
     allowed_origins: List[str] = [
@@ -59,7 +63,19 @@ class Settings(BaseSettings):
                     f"Production startup failure: Insecure default secret_key cannot be used in environment '{self.environment}'. "
                     "Configure NAKSHA_SECRET_KEY in production."
                 )
+            if self.nid_hmac_secret == DEFAULT_DEV_NID_SECRET:
+                raise ValueError(
+                    f"Production startup failure: Insecure default nid_hmac_secret cannot be used in environment '{self.environment}'. "
+                    "Configure NAKSHA_NID_HMAC_SECRET in production."
+                )
         return self
+
+
+from functools import lru_cache
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
 
 
 settings = Settings()
