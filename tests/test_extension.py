@@ -119,3 +119,32 @@ def test_extension_content_script_sidepanel_guidance():
     assert "showPanelGuideToast" in content_js
     assert "নকশা (NAKSHA) সাইড প্যানেল নির্দেশিকা" in content_js
     assert "NAKSHA_OPEN_SIDEPANEL" in content_js
+
+
+def test_rule_grid_renders_backend_rules_without_hardcoded_numbers():
+    """Verify RuleGrid.js dynamically renders data.rules and has no hardcoded values or statutes."""
+    rule_grid_js = (EXTENSION_DIR / "components" / "RuleGrid.js").read_text(encoding="utf-8")
+
+    # 1. No hardcoded metric numbers or static values
+    assert "0.90" not in rule_grid_js
+    assert "০.৯০" not in rule_grid_js
+    assert "124" not in rule_grid_js
+    assert "১২৪" not in rule_grid_js
+    assert "64%" not in rule_grid_js
+    assert "৬৪%" not in rule_grid_js
+    assert "5.10" not in rule_grid_js
+    assert "6.00" not in rule_grid_js
+
+    # 2. No hardcoded Act citations
+    assert "State Acquisition Act" not in rule_grid_js
+    assert "রাষ্ট্রীয় অধিগ্রহণ আইন" not in rule_grid_js
+    assert "§86" not in rule_grid_js
+    assert "ধারা ৮৬" not in rule_grid_js
+
+    # 3. Dynamic rules rendering & UNKNOWN state handling
+    assert "data.rules" in rule_grid_js
+    assert "UNKNOWN" in rule_grid_js
+    assert "Insufficient data" in rule_grid_js
+    assert "অপর্যাপ্ত তথ্য" in rule_grid_js
+    assert "legal_ref" in rule_grid_js
+    assert "cited_record_ids" in rule_grid_js

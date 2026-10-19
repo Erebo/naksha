@@ -1042,6 +1042,7 @@ function renderAllComponents(verifData, layersData, conflictData, neighborsData,
   // D. RuleGrid (Tab 1)
   const rulesContainer = document.getElementById('overview-rules-container');
   renderRuleGrid(rulesContainer, {
+    rules: verifData?.rules || [],
     hasKhasOverlap,
     hasAreaMismatch,
     hasUnmutated,
