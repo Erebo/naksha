@@ -4,12 +4,10 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Default persistent database path inside workspace
-DB_DIR = Path(__file__).resolve().parent.parent.parent
-DEFAULT_SQLITE_URL = f"sqlite:///{DB_DIR / 'naksha_spatial.db'}"
+from naksha.core.config import settings
 
-# Read DATABASE_URL from environment with fallback to persistent SQLite file
-DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_SQLITE_URL)
+# Read DATABASE_URL from settings (NAKSHA_DATABASE_URL)
+DATABASE_URL = settings.database_url
 
 # Configure connect_args based on database dialect
 connect_args = {}

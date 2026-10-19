@@ -615,12 +615,6 @@ def reset_auth_rate_limits() -> None:
     summary="Verify Officer Portal Session and Issue 15-Minute Token",
     tags=["Authentication & Security"],
 )
-@router.post(
-    f"{settings.api_prefix}/auth/verify-officer",
-    response_model=VerifyOfficerResponse,
-    summary="Verify Officer Portal Session and Issue 15-Minute Token (Prefixed)",
-    tags=["Authentication & Security"],
-)
 def verify_officer_session(req: VerifyOfficerRequest, request: Request) -> VerifyOfficerResponse:
     """Verifies that the officer is currently logged into an approved government portal
     and matches our authorized officer registry. Emits ACCESS_GRANTED or ACCESS_DENIED
@@ -643,7 +637,24 @@ def verify_officer_session(req: VerifyOfficerRequest, request: Request) -> Verif
             )
         _ip_request_timestamps[client_ip].append(now)
 
-    # 1. Verify exact-match origin allowlist (empty or missing origin is denied)
+    # 1. Verify HTTP Origin header when present: must exact-match settings.allowed_origins
+    http_origin = request.headers.get("origin")
+    if http_origin and http_origin.strip() not in settings.allowed_origins:
+        audit_ledger.record_verification(
+            event_type="ACCESS_DENIED",
+            canonical_parcel_id=None,
+            dag_number=None,
+            mouza=req.office or "Unknown",
+            verdict="DENIED",
+            cited_records=["DISALLOWED_HTTP_ORIGIN"],
+            officer_id=req.officer_id or "UNKNOWN",
+        )
+        return VerifyOfficerResponse(
+            status="denied",
+            reason="অননুমোদিত পোর্টাল উৎস (Disallowed HTTP Origin header)",
+        )
+
+    # 2. Verify portal_origin in body: must exact-match settings.allowed_origins separately (empty/missing is denied)
     if not req.portal_origin or req.portal_origin.strip() not in settings.allowed_origins:
         audit_ledger.record_verification(
             event_type="ACCESS_DENIED",
@@ -651,7 +662,7 @@ def verify_officer_session(req: VerifyOfficerRequest, request: Request) -> Verif
             dag_number=None,
             mouza=req.office or "Unknown",
             verdict="DENIED",
-            cited_records=["DISALLOWED_ORIGIN"],
+            cited_records=["DISALLOWED_PORTAL_ORIGIN"],
             officer_id=req.officer_id or "UNKNOWN",
         )
         return VerifyOfficerResponse(

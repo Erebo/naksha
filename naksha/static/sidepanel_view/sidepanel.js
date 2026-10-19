@@ -10,6 +10,7 @@ const DEFAULT_PARCEL_ID = 'par-8f92-bd04-syn';
 
 const state = {
   activeParcelId: DEFAULT_PARCEL_ID,
+  sessionToken: null,
   map: null,
   layers: {},
   layerVisibility: {
@@ -110,6 +111,55 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initSidePanelApp);
 } else {
   initSidePanelApp();
+}
+
+// Token helpers for Phase 2b auth hardening
+async function getStoredOfficerToken() {
+  if (state.sessionToken) return state.sessionToken;
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.session) {
+    try {
+      const res = await chrome.storage.session.get(['naksha_jwt_token']);
+      if (res && res.naksha_jwt_token) {
+        state.sessionToken = res.naksha_jwt_token;
+        return res.naksha_jwt_token;
+      }
+    } catch (e) {}
+  }
+  const s = sessionStorage.getItem('naksha_jwt_token');
+  if (s) {
+    state.sessionToken = s;
+    return s;
+  }
+  return null;
+}
+
+function handleAuth401Failure() {
+  state.sessionToken = null;
+  sessionStorage.removeItem('naksha_jwt_token');
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.session) {
+    chrome.storage.session.remove('naksha_jwt_token').catch(() => {});
+  }
+  const overlay = document.getElementById('sp-verification-screen');
+  if (overlay) {
+    overlay.classList.remove('sp-hidden');
+  }
+  const verifiedBadge = document.getElementById('sp-verified-badge');
+  if (verifiedBadge) {
+    verifiedBadge.classList.add('hidden');
+  }
+  const resultBox = document.getElementById('sp-verify-result');
+  if (resultBox) {
+    resultBox.className = 'sp-verify-result sp-res-denied';
+    const isEn = currentLang === 'en';
+    resultBox.innerHTML = `
+      <span class="sp-res-icon">✕</span>
+      <div class="sp-res-body">
+        <span class="sp-res-title">${isEn ? 'Session Expired (401)' : 'সেশন মেয়াদোত্তীর্ণ (৪০১)'}</span>
+        <span class="sp-res-sub">${isEn ? 'Please re-verify officer identity' : 'দয়া করে কর্মকর্তার পরিচয় পুনর্যাচাই করুন'}</span>
+      </div>
+    `;
+    resultBox.style.display = 'flex';
+  }
 }
 
 // 0. Automated Officer Verification Runner
@@ -231,13 +281,26 @@ async function runAutomaticOfficerVerification(onVerifiedCallback) {
   setStepState(chkRegistry, '<span class="sp-spinner"></span>', false);
 
   // 3. Step 3: Call backend POST /auth/verify-officer (~1.6s)
+  let portalOrigin = (state.context && state.context.origin) || '';
+  if (!portalOrigin && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    try {
+      const stored = await chrome.storage.local.get(['activeParcelContext']);
+      if (stored && stored.activeParcelContext && stored.activeParcelContext.origin) {
+        portalOrigin = stored.activeParcelContext.origin;
+      }
+    } catch (e) {}
+  }
+  if (!portalOrigin) {
+    portalOrigin = (window.location.origin && window.location.origin.startsWith('http')) ? window.location.origin : 'http://127.0.0.1:8000';
+  }
+
   let verifyRes = null;
   const [fetchResult] = await Promise.all([
     fetch(`${API_BASE}/auth/verify-officer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        portal_origin: window.location.origin || 'http://127.0.0.1:8000',
+        portal_origin: portalOrigin,
         officer_id: officerId,
         name: currentProf.name,
         designation: currentProf.title,
@@ -259,10 +322,11 @@ async function runAutomaticOfficerVerification(onVerifiedCallback) {
   if (verifyRes && verifyRes.status === 'verified') {
     setStepState(chkRegistry, '<span class="sp-chk-tick">✓</span>', true);
 
-    // Store JWT securely in session storage
+    // Store JWT securely in session storage and state
     if (verifyRes.token) {
+      state.sessionToken = verifyRes.token;
       sessionStorage.setItem('naksha_jwt_token', verifyRes.token);
-      if (chrome.storage && chrome.storage.session) {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.session) {
         chrome.storage.session.set({ naksha_jwt_token: verifyRes.token }).catch(() => {});
       }
     }
@@ -833,7 +897,12 @@ async function loadPlotData(parcelId) {
   const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
-    const fetchOpts = { signal: controller.signal };
+    const token = await getStoredOfficerToken();
+    const headers = { 'Accept': 'application/json' };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const fetchOpts = { signal: controller.signal, headers };
     const [layersRes, neighborsRes, conflictsRes, verifRes, ledgerRes, integRes] = await Promise.allSettled([
       fetch(`${API_BASE}/api/v1/spatial/parcels/${parcelId}/layers`, fetchOpts),
       fetch(`${API_BASE}/api/v1/spatial/parcels/${parcelId}/neighbors`, fetchOpts),
@@ -846,6 +915,14 @@ async function loadPlotData(parcelId) {
     clearTimeout(timeoutId);
 
     if (reqSeq !== state.currentRequestSeq) return;
+
+    // Check for 401 Unauthorized across responses
+    const allResponses = [layersRes, neighborsRes, conflictsRes, verifRes, ledgerRes, integRes];
+    const isUnauthorized = allResponses.some(r => r.status === 'fulfilled' && r.value && r.value.status === 401);
+    if (isUnauthorized) {
+      handleAuth401Failure();
+      return;
+    }
 
     if (layersRes.status !== 'fulfilled' || !layersRes.value.ok) {
       throw new Error('Spatial layers unavailable');

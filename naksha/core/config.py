@@ -1,9 +1,11 @@
-"""Core configuration for NAKSHA."""
+from pathlib import Path
 from typing import List
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 DEFAULT_DEV_SECRET = "dev-insecure-secret-key-change-in-production"
+DB_DIR = Path(__file__).resolve().parent.parent.parent
+DEFAULT_SQLITE_URL = f"sqlite:///{DB_DIR / 'naksha_spatial.db'}"
 
 
 class Settings(BaseSettings):
@@ -19,6 +21,7 @@ class Settings(BaseSettings):
     debug: bool = False
     synthetic_mode: bool = True
     environment: str = "development"
+    database_url: str = DEFAULT_SQLITE_URL
 
     # Authentication & Security
     secret_key: str = DEFAULT_DEV_SECRET

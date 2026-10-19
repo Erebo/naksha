@@ -15,6 +15,14 @@ from naksha.api.routes import reset_auth_rate_limits
 client = TestClient(app)
 
 
+@pytest.fixture(autouse=True)
+def enforce_clean_dependency_overrides():
+    """Ensure tests in test_auth.py strictly run with real dependencies (no overrides)."""
+    app.dependency_overrides.clear()
+    yield
+    app.dependency_overrides.clear()
+
+
 def _make_token(
     officer_id: str = "UL-2024-KSH",
     name: str = "মোঃ ফজলুর রহমান",
@@ -266,15 +274,92 @@ def test_verify_officer_designation_mismatch():
     assert "পদবী নিবন্ধনের তথ্যের সাথে মেলেনি" in data["reason"]
 
 
+def test_verify_officer_extension_and_portal_origins_pass(monkeypatch):
+    """Extension Origin header + portal origin in body succeeds when both are allowlisted."""
+    reset_auth_rate_limits()
+    test_ext_origin = "chrome-extension://abcdefghijklmnopqrstuvwxyz123456"
+    test_portal_origin = "http://localhost:8000"
+    
+    # Allow both origins
+    monkeypatch.setattr(settings, "allowed_origins", settings.allowed_origins + [test_ext_origin])
+    
+    payload = {
+        "portal_origin": test_portal_origin,
+        "officer_id": "UL-2024-KSH",
+        "name": "মোঃ ফজলুর রহমান",
+        "designation": "ইউনিয়ন ভূমি সহকারী কর্মকর্তা",
+    }
+    # Chrome extension sends Origin header: chrome-extension://<id>
+    res = client.post(
+        "/auth/verify-officer",
+        json=payload,
+        headers={"Origin": test_ext_origin},
+    )
+    assert res.status_code == 200
+    assert res.json()["status"] == "verified"
+    assert res.json()["token"] is not None
+
+
+def test_verify_officer_unlisted_http_origin_header_denied():
+    """Unlisted HTTP Origin header is denied even if body portal_origin is valid."""
+    reset_auth_rate_limits()
+    payload = {
+        "portal_origin": "http://localhost:8000",
+        "officer_id": "UL-2024-KSH",
+        "name": "মোঃ ফজলুর রহমান",
+        "designation": "ইউনিয়ন ভূমি সহকারী কর্মকর্তা",
+    }
+    res = client.post(
+        "/auth/verify-officer",
+        json=payload,
+        headers={"Origin": "http://evil-unlisted-origin.com"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "denied"
+    assert "Disallowed HTTP Origin header" in data["reason"]
+
+
+def test_verify_officer_unlisted_portal_origin_denied():
+    """Unlisted portal_origin in body is denied."""
+    reset_auth_rate_limits()
+    payload = {
+        "portal_origin": "http://unauthorized-domain.com",
+        "officer_id": "UL-2024-KSH",
+        "name": "মোঃ ফজলুর রহমান",
+        "designation": "ইউনিয়ন ভূমি সহকারী কর্মকর্তা",
+    }
+    res = client.post("/auth/verify-officer", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "denied"
+    assert "Disallowed portal origin" in data["reason"]
+
+
+def test_verify_officer_empty_portal_origin_denied():
+    """Empty or missing portal_origin in body is denied."""
+    reset_auth_rate_limits()
+    for empty_val in ["", "   ", None]:
+        payload = {
+            "portal_origin": empty_val,
+            "officer_id": "UL-2024-KSH",
+            "name": "মোঃ ফজলুর রহমান",
+            "designation": "ইউনিয়ন ভূমি সহকারী কর্মকর্তা",
+        }
+        res = client.post("/auth/verify-officer", json=payload)
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "denied"
+        assert "Disallowed portal origin" in data["reason"]
+
+
 def test_verify_officer_origin_bypass_attempts():
-    """Exact-match origin check rejects substrings, prefixes, suffixes, and empty origin."""
+    """Exact-match origin check rejects substrings, prefixes, and suffixes."""
     reset_auth_rate_limits()
     invalid_origins = [
         "http://evil.com/http://localhost:8000",
         "http://localhost:8000.evil.com",
         "http://evil.com",
-        "",
-        None,
     ]
     for origin in invalid_origins:
         payload = {
@@ -287,7 +372,33 @@ def test_verify_officer_origin_bypass_attempts():
         assert res.status_code == 200
         data = res.json()
         assert data["status"] == "denied"
-        assert "অননুমোদিত পোর্টাল উৎস" in data["reason"]
+        assert "Disallowed portal origin" in data["reason"]
+
+
+def test_prove_dependency_removal_would_fail_protection():
+    """Proves that route protection strictly requires the real dependency, not an override."""
+    # 1. With NO override, accessing protected route returns 401
+    assert len(app.dependency_overrides) == 0
+    res_real = client.get("/api/v1/records")
+    assert res_real.status_code == 401
+
+    # 2. If the dependency were bypassed (simulating what happens without auth dependency),
+    # it would return 200. This proves the test exercises the real dependency.
+    from naksha.core.auth import get_current_officer
+    dummy_officer = OfficerContext(
+        officer_id="TEST-OVERRIDE",
+        name="তানিয়া সুলতানা",
+        role=OfficerRole.SYSTEM_ADMIN,
+        designation="সহকারী কমিশনার (ভূমি)",
+        office="গাজীপুর সদর",
+        jurisdiction="কাশিমপুর, গাজীপুর সদর",
+    )
+    app.dependency_overrides[get_current_officer] = lambda: dummy_officer
+    try:
+        res_override = client.get("/api/v1/records")
+        assert res_override.status_code == 200
+    finally:
+        app.dependency_overrides.clear()
 
 
 # ==============================================================================

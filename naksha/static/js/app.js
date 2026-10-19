@@ -94,11 +94,30 @@ async function loadParcelData() {
     errorEl.classList.add('hidden');
 
     try {
+        let token = sessionStorage.getItem('naksha_jwt_token');
+        if (!token) {
+            const authRes = await fetch('/auth/verify-officer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    portal_origin: window.location.origin || 'http://127.0.0.1:8000',
+                    officer_id: 'UL-2024-KSH',
+                    name: 'মোঃ ফজলুর রহমান',
+                    designation: 'ইউনিয়ন ভূমি সহকারী কর্মকর্তা',
+                }),
+            }).then(r => r.json()).catch(() => null);
+            if (authRes && authRes.token) {
+                token = authRes.token;
+                sessionStorage.setItem('naksha_jwt_token', token);
+            }
+        }
+
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
         const [layersData, neighborsData, conflictData, demoData] = await Promise.all([
-            fetch(`/api/v1/spatial/parcels/${state.targetParcelId}/layers`).then(r => r.json()),
-            fetch(`/api/v1/spatial/parcels/${state.targetParcelId}/neighbors`).then(r => r.json()),
-            fetch(`/api/v1/spatial/parcels/${state.targetParcelId}/conflicts`).then(r => r.json()),
-            fetch(`/api/v1/records/demo`).then(r => r.json()),
+            fetch(`/api/v1/spatial/parcels/${state.targetParcelId}/layers`, { headers }).then(r => r.json()),
+            fetch(`/api/v1/spatial/parcels/${state.targetParcelId}/neighbors`, { headers }).then(r => r.json()),
+            fetch(`/api/v1/spatial/parcels/${state.targetParcelId}/conflicts`, { headers }).then(r => r.json()),
+            fetch(`/api/v1/records/demo`, { headers }).then(r => r.json()),
         ]);
 
         renderSurveyLayers(layersData);
