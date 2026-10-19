@@ -13,6 +13,7 @@
 [![Leaflet](https://img.shields.io/badge/Leaflet-GIS-199900?logo=leaflet&logoColor=white)](#)
 [![Ed25519](https://img.shields.io/badge/Ed25519-SHA--256_Ledger-DC382D?logo=letsencrypt&logoColor=white)](#)
 [![Tests](https://img.shields.io/badge/tests-136_passed-brightgreen?logo=pytest&logoColor=white)](#)
+[![Concept Note](https://img.shields.io/badge/Concept_Note-PDF-red?logo=adobeacrobatreader&logoColor=white)](docs/Naksha_Concept_Note.pdf)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](#)
 
 </div>
@@ -28,6 +29,8 @@ Bangladesh's land records are scattered across **5+ agencies** (Sub-Registry, AC
 **NAKSHA** is a zero-integration Chrome Side Panel that overlays existing government portals. It reads the officer's active portal session, verifies identity against a database registry, and instantly cross-references cadastral records across all agencies — delivering a **CLEAR / REVIEW / BLOCK** verdict with spatial proof, lineage tracing, and an immutable, tamper-evident audit trail.
 
 > **Zero data entry. Zero portal redesign. One click to verify.**
+>
+> 📄 **[Download the Official Naksha Concept Note (PDF)](docs/Naksha_Concept_Note.pdf)** — *4-page executive brief prepared for the LandTech 2026 Innovation Hackathon.*
 
 ---
 
@@ -486,10 +489,10 @@ Create a `.env` file in the project root:
 NAKSHA_ENVIRONMENT=development
 NAKSHA_DATABASE_URL=postgresql+psycopg://naksha_dev:naksha_dev_pw@localhost:5432/naksha
 NAKSHA_TEST_DATABASE_URL=postgresql+psycopg://naksha_dev:naksha_dev_pw@localhost:5432/naksha_test
-NAKSHA_SECRET_KEY=dev-insecure-secret-key-change-in-production
-NAKSHA_NID_HMAC_SECRET=dev-insecure-nid-salt-key-change-in-production
+NAKSHA_SECRET_KEY=change-to-a-secure-random-secret-in-production
+NAKSHA_NID_HMAC_SECRET=change-to-a-secure-random-salt-in-production
 NAKSHA_ALLOWED_ORIGINS=["http://localhost:8000","http://127.0.0.1:8000","chrome-extension://<YOUR_EXTENSION_ID>"]
-NAKSHA_LEDGER_PRIVATE_KEY=000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+NAKSHA_LEDGER_PRIVATE_KEY=<generate-with-cli-command-below>
 ```
 
 > 🔑 **Generate a Production Ledger Key**:
@@ -593,6 +596,9 @@ naksha/
 ├── alembic.ini                 # Alembic migration environment configuration
 ├── requirements.txt            # Pinned production dependencies (FastAPI, PostGIS, PyJWT)
 └── docs/                       # Architecture, screenshots, database runbooks
+    ├── Naksha_Concept_Note.pdf # 4-page executive concept note (LandTech 2026 Hackathon)
+    ├── DATABASE.md             # PostgreSQL + PostGIS runbook & migration guide
+    └── ROADMAP.md              # Multi-phase rollout and future milestones
 ```
 
 ---
