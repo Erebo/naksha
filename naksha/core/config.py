@@ -1,5 +1,9 @@
 """Core configuration for NAKSHA."""
+from typing import List
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+DEFAULT_DEV_SECRET = "dev-insecure-secret-key-change-in-production"
 
 
 class Settings(BaseSettings):
@@ -14,6 +18,20 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
     debug: bool = False
     synthetic_mode: bool = True
+    environment: str = "development"
+
+    # Authentication & Security
+    secret_key: str = DEFAULT_DEV_SECRET
+    jwt_issuer: str = "naksha-auth-service"
+    jwt_expiry_seconds: int = 900
+    allowed_origins: List[str] = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    auth_rate_limit_max_requests: int = 5
+    auth_rate_limit_window_seconds: int = 60
 
     # Statutory Rule Thresholds (Configurable via environment variables)
     khas_overlap_limit_decimals: float = 0.0
@@ -29,6 +47,16 @@ class Settings(BaseSettings):
     ld_tax_compliance_legal_ref: str = "TODO: verify with legal source"
     mutation_status_legal_ref: str = "TODO: verify with legal source"
 
+    @model_validator(mode="after")
+    def validate_production_secret(self) -> "Settings":
+        env = (self.environment or "").strip().lower()
+        if env not in ("development", "test", "testing"):
+            if self.secret_key == DEFAULT_DEV_SECRET:
+                raise ValueError(
+                    f"Production startup failure: Insecure default secret_key cannot be used in environment '{self.environment}'. "
+                    "Configure NAKSHA_SECRET_KEY in production."
+                )
+        return self
+
 
 settings = Settings()
-
