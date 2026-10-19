@@ -5,6 +5,7 @@ from sqlalchemy import (
     Column,
     String,
     Float,
+    Integer,
     Boolean,
     DateTime,
     ForeignKey,
@@ -194,3 +195,23 @@ class LienPG(PGBase):
     )
 
     parcel = relationship("CanonicalParcelPG", back_populates="liens")
+
+
+class LedgerEntryPG(PGBase):
+    """Immutable, Hash-Chained Audit Ledger Log."""
+    __tablename__ = "ledger_entries"
+
+    entry_index = Column(Integer, primary_key=True, autoincrement=False)
+    timestamp = Column(DateTime(timezone=True), nullable=False)
+    event_type = Column(String(64), nullable=False)
+    parcel_id = Column(UUID(as_uuid=True), nullable=True)
+    dag_number = Column(String(32), nullable=True, index=True)
+    mouza = Column(String(128), nullable=True)
+    officer_id = Column(String(64), nullable=True)
+    verdict = Column(String(32), nullable=True)
+    cited_records = Column(JSONB, nullable=True)
+    payload_hash = Column(String(64), nullable=False)
+    previous_hash = Column(String(64), nullable=False)
+    entry_hash = Column(String(64), nullable=False)
+    signature = Column(String(128), nullable=False)
+

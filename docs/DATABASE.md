@@ -61,6 +61,7 @@ Configure these in your `.env` or set as environment variables:
 |---|---|---|
 | `NAKSHA_DATABASE_URL` | Main Application Database | `postgresql+psycopg://naksha_dev:naksha_dev_pw@localhost:5432/naksha` |
 | `NAKSHA_TEST_DATABASE_URL` | Automated Test Database | `postgresql+psycopg://naksha_dev:naksha_dev_pw@localhost:5432/naksha_test` |
+| `NAKSHA_LEDGER_PRIVATE_KEY` | Ed25519 32-byte hex signing key for Trust Ledger | Required in production (generate via `python -m naksha.cli generate-ledger-key`) |
 
 > **Note**: If `NAKSHA_DATABASE_URL` is omitted, NAKSHA defaults to SQLite (`sqlite:///naksha_spatial.db`), keeping local offline development fully functional without Docker.
 

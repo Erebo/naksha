@@ -29,9 +29,24 @@ def main() -> None:
         help="Bypass database name safety confirmation for non-dev/non-test databases",
     )
 
+    # generate-ledger-key command
+    subparsers.add_parser(
+        "generate-ledger-key",
+        help="Generate a cryptographic Ed25519 private key for NAKSHA Trust Ledger",
+    )
+
     args = parser.parse_args()
 
-    if args.subcommand == "seed":
+    if args.subcommand == "generate-ledger-key":
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+        priv = ed25519.Ed25519PrivateKey.generate()
+        priv_hex = priv.private_bytes_raw().hex()
+        pub_hex = priv.public_key().public_bytes_raw().hex()
+        print("[NAKSHA CLI] Generated Ed25519 Keypair for Trust Ledger:")
+        print(f"  NAKSHA_LEDGER_PRIVATE_KEY={priv_hex}")
+        print(f"  Public Key (hex): {pub_hex}")
+        print("\nStore NAKSHA_LEDGER_PRIVATE_KEY securely in your environment or secrets manager.")
+    elif args.subcommand == "seed":
         settings = get_settings()
         if args.target == "postgres":
             target_url = args.url or settings.database_url
