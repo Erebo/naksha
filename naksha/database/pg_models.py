@@ -151,7 +151,7 @@ class OfficerPG(PGBase):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     __table_args__ = (
-        CheckConstraint("role IN ('ac_land', 'kanungo', 'surveyor', 'sub_registrar', 'dc', 'admin', 'auditor')", name="chk_officers_role"),
+        CheckConstraint("role IN ('ac_land', 'kanungo', 'surveyor', 'sub_registrar', 'dc', 'admin', 'auditor', 'union_land_officer')", name="chk_officers_role"),
     )
 
 

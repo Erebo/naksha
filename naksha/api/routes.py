@@ -4,6 +4,7 @@ import threading
 import time
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from naksha.core.config import settings
 from naksha.models.canonical import (
@@ -51,9 +52,14 @@ except Exception as e:
     _persistent_repo = InMemoryRecordRepository(initial_records=generate_synthetic_records())
 
 
-def get_repository() -> BaseRecordRepository:
-    """Dependency provider for the repository layer."""
-    return _persistent_repo
+from naksha.database.connection import get_db
+from naksha.repository.pg_repository import PostgresRecordRepository
+
+def get_repository(db: Optional[Session] = Depends(get_db)) -> BaseRecordRepository:
+    """Dependency provider for the repository layer: returns PostgresRecordRepository on PostgreSQL."""
+    if settings.database_url.startswith("postgresql"):
+        return PostgresRecordRepository(session=db)
+    return SQLAlchemyRecordRepository(session=db)
 
 
 # ==============================================================================
@@ -615,7 +621,9 @@ def reset_auth_rate_limits() -> None:
     summary="Verify Officer Portal Session and Issue 15-Minute Token",
     tags=["Authentication & Security"],
 )
-def verify_officer_session(req: VerifyOfficerRequest, request: Request) -> VerifyOfficerResponse:
+def verify_officer_session(
+    req: VerifyOfficerRequest, request: Request, db: Session = Depends(get_db)
+) -> VerifyOfficerResponse:
     """Verifies that the officer is currently logged into an approved government portal
     and matches our authorized officer registry. Emits ACCESS_GRANTED or ACCESS_DENIED
     audit ledger events.
@@ -670,8 +678,38 @@ def verify_officer_session(req: VerifyOfficerRequest, request: Request) -> Verif
             reason="অননুমোদিত পোর্টাল উৎস (Disallowed portal origin)",
         )
 
-    # 2. Match against seeded registry
-    officer_profile = SEEDED_OFFICER_REGISTRY.get(req.officer_id)
+    # 3. Match against officer registry (database when PostgreSQL is active, otherwise in-code registry)
+    officer_profile = None
+    if settings.database_url.startswith("postgresql"):
+        from naksha.database.pg_models import OfficerPG
+        pg_officer = db.query(OfficerPG).filter(OfficerPG.officer_id == req.officer_id).first()
+        if pg_officer:
+            if not pg_officer.is_active:
+                audit_ledger.record_verification(
+                    event_type="ACCESS_DENIED",
+                    canonical_parcel_id=None,
+                    dag_number=None,
+                    mouza=req.office or pg_officer.jurisdiction or "Unknown",
+                    verdict="DENIED",
+                    cited_records=["INACTIVE_OFFICER"],
+                    officer_id=req.officer_id or "UNKNOWN",
+                )
+                return VerifyOfficerResponse(
+                    status="denied",
+                    reason="কর্মকর্তার অ্যাকাউন্ট নিষ্ক্রিয় (Officer account is inactive)",
+                )
+            officer_profile = {
+                "officer_id": pg_officer.officer_id,
+                "name": pg_officer.name,
+                "designation": pg_officer.designation,
+                "office": pg_officer.office,
+                "role": pg_officer.role,
+                "jurisdiction": pg_officer.jurisdiction,
+                "trusted": pg_officer.is_active,
+            }
+
+    if officer_profile is None:
+        officer_profile = SEEDED_OFFICER_REGISTRY.get(req.officer_id)
     if not officer_profile or not officer_profile.get("trusted", False):
         audit_ledger.record_verification(
             event_type="ACCESS_DENIED",
