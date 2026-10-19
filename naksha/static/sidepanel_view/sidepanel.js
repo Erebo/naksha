@@ -1079,7 +1079,8 @@ function renderAllComponents(verifData, layersData, conflictData, neighborsData,
 
   // H. AuditChain (Tab 5)
   const auditContainer = document.getElementById('audit-chain-container');
-  renderAuditChain(auditContainer, ledgerData, integData);
+  const activeDag = (verifData && verifData.dag_number) || (state.context && state.context.dag) || '402';
+  renderAuditChain(auditContainer, ledgerData, integData, activeDag);
 }
 
 function resetLayerStyle(type, layer) {

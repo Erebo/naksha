@@ -83,6 +83,90 @@ function calculateBarPercentage(rule) {
   return 0;
 }
 
+const LEGAL_REFS_BN = {
+  khas_encroachment: 'সরকারি এবং স্থানীয় কর্তৃপক্ষ ভূমি ও ইমারত (বেদখল উদ্ধার) অধ্যাদেশ, ১৯৭০ (ধারা ৫)',
+  area_tolerance: 'বেঙ্গল সার্ভে অ্যাক্ট, ১৮৭৫ ও ভূমি জরিপ নির্দেশিকা (পরিপত্র ১৬/২০১৫)',
+  owner_name_match: 'নিবন্ধন আইন, ১৯০৮ (ধারা ২১) ও ভূমি ব্যবস্থাপনা ম্যানুয়াল, ১৯৯০',
+  ld_tax_compliance: 'ভূমি উন্নয়ন কর অধ্যাদেশ, ১৯৭৬ (ধারা ৩) ও কর আদায় বিধিমালা',
+  mutation_status: 'রাষ্ট্রীয় অধিগ্রহণ ও প্রজাস্বত্ব আইন, ১৯৫০ (ধারা ১৪৩) ও পরিপত্র',
+};
+
+const LEGAL_REFS_EN = {
+  khas_encroachment: 'Government & Local Authority Lands & Buildings (Recovery of Possession) Ordinance 1970 (Sec 5)',
+  area_tolerance: 'Bengal Survey Act 1875 & Cadastral Mapping Circular (Circular 16/2015)',
+  owner_name_match: 'Registration Act 1908 (Sec 21) & Land Management Manual 1990',
+  ld_tax_compliance: 'Land Development Tax Ordinance 1976 (Sec 3) & Assessment Rules',
+  mutation_status: 'State Acquisition and Tenancy Act 1950 (Sec 143) & MinLand Directives',
+};
+
+function formatEvidenceText(rule, isEn) {
+  if (!rule || !rule.evidence) return '';
+  if (isEn) return rule.evidence;
+
+  const id = rule.rule_id;
+  const status = rule.status;
+  const m = rule.measured;
+  const lim = rule.limit;
+
+  if (id === 'ld_tax_compliance') {
+    if (status === 'FAIL') {
+      const yrs = Math.round(m || 0);
+      const limYrs = Math.round(lim || 1);
+      return `হোল্ডিংয়ে ${toBnDigits(yrs)} অর্থবছরের ভূমি উন্নয়ন কর বকেয়া রয়েছে (সংবিধিবদ্ধ অনুমোদিত সীমা: ${toBnDigits(limYrs)} অর্থবছর)।`;
+    }
+    return `ভূমি উন্নয়ন কর পরিশোধের স্থিতি নিয়মিত রয়েছে (${toBnDigits(Math.round(m || 0))} বকেয়া বছর <= ${toBnDigits(Math.round(lim || 1))} বছর)।`;
+  }
+
+  if (id === 'mutation_status') {
+    if (status === 'FAIL') {
+      const days = Math.round(m || 0);
+      const limDays = Math.round(lim || 30);
+      return `দলিল নিবন্ধনের ${toBnDigits(days)} দিন অতিবাহিত হলেও এসি ল্যান্ড ই-নামজারি সম্পন্ন হয়নি (সংবিধিবদ্ধ সীমা: ${toBnDigits(limDays)} দিন)।`;
+    }
+    return `দলিল নিবন্ধনের পর সংবিধিবদ্ধ নামজারি সময়সীমা উত্তীর্ণ হয়নি (${toBnDigits(Math.round(m || 0))} দিন <= ${toBnDigits(Math.round(lim || 30))} দিন)।`;
+  }
+
+  if (id === 'khas_encroachment') {
+    if (status === 'FAIL') {
+      const decStr = typeof m === 'number' ? m.toFixed(2) : String(m);
+      const limStr = typeof lim === 'number' ? lim.toFixed(2) : String(lim);
+      return `সরকারি খাস জমি বা খালের উপর ${toBnDigits(decStr)} শতক অননুমোদিত দখল সনাক্ত হয়েছে (অনুমোদিত সীমা: ${toBnDigits(limStr)} শতক)।`;
+    }
+    return `সরকারি খাস জমি বা খালের উপর কোনো অননুমোদিত দখল সনাক্ত হয়নি।`;
+  }
+
+  if (id === 'area_tolerance') {
+    const diffStr = typeof m === 'number' ? m.toFixed(2) : String(m);
+    const limStr = typeof lim === 'number' ? lim.toFixed(2) : String(lim);
+    if (status === 'FAIL') {
+      return `দলিল ও ডিএলআরএস জরিপের মধ্যে ক্ষেত্রফলের পার্থক্য ${toBnDigits(diffStr)} শতক, যা সংবিধিবদ্ধ সহনশীলতার (±${toBnDigits(limStr)} শতক) বাইরে।`;
+    }
+    return `দলিল ও ডিএলআরএস জরিপের ক্ষেত্রফলের পার্থক্য ${toBnDigits(diffStr)} শতক, যা অনুমোদিত সীমার (±${toBnDigits(limStr)} শতক) মধ্যে রয়েছে।`;
+  }
+
+  if (id === 'owner_name_match') {
+    const pct = typeof m === 'number' && m <= 1.0 ? Math.round(m * 100) : Math.round(m);
+    const limPct = typeof lim === 'number' && lim <= 1.0 ? Math.round(lim * 100) : Math.round(lim);
+    if (status === 'FAIL') {
+      return `রেকর্ডকৃত মালিক ও আবেদনকারীর নামের ধ্বনিগত মিল ${toBnDigits(pct)}%, যা সংবিধিবদ্ধ সীমার (${toBnDigits(limPct)}%) কম।`;
+    }
+    return `রেকর্ডকৃত মালিক ও আবেদনকারীর নামের মধ্যে গ্রহণযোগ্য ধ্বনিগত মিল রয়েছে (${toBnDigits(pct)}% >= ${toBnDigits(limPct)}%)।`;
+  }
+
+  return rule.evidence;
+}
+
+function formatLegalRefText(rule, isEn) {
+  if (!rule) return '';
+  if (isEn) {
+    if (rule.legal_ref && !rule.legal_ref.includes('TODO')) {
+      return rule.legal_ref;
+    }
+    return LEGAL_REFS_EN[rule.rule_id] || 'Statutory Land Administration Guidelines';
+  }
+  return LEGAL_REFS_BN[rule.rule_id] || rule.legal_ref || 'প্রযোজ্য ভূমি ব্যবস্থাপনা আইন ও সরকারি পরিপত্র';
+}
+
 function renderRuleGrid(container, data) {
   if (!container) return;
 
@@ -181,22 +265,30 @@ function renderRuleGrid(container, data) {
                 <span class="rf-cite-toggle" onclick="this.nextElementSibling.classList.toggle('hidden')" style="font-size: 9.5px; cursor: pointer; color: var(--text-dim);">
                   ${isEn ? 'Evidence & Law' : 'প্রমাণ ও আইনি ভিত্তি'} ▾
                 </span>
-                <div class="rf-evidence-panel hidden" style="margin-top: 5px; padding: 5px; background: var(--bg-surface); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); width: 100%;">
-                  ${r.evidence ? `<div class="rf-ev-desc" style="font-size: 9.5px; color: var(--text-main); line-height: 1.35; margin-bottom: 4px;">${escapeHtml(r.evidence)}</div>` : ''}
-                  ${r.legal_ref ? `
-                    <div class="rf-ev-legal" style="font-size: 9px; color: var(--text-muted); margin-bottom: 4px;">
-                      <span class="font-bold" style="color: var(--text-main);">${isEn ? 'Statutory Reference: ' : 'আইনি ভিত্তি: '}</span>
-                      <span>${escapeHtml(r.legal_ref)}</span>
-                    </div>
-                  ` : ''}
+                <div class="rf-evidence-panel hidden" style="margin-top: 6px; padding: 7px 9px; background: var(--bg-surface-2, #18181C); border-radius: var(--radius-sm, 4px); border: 1px solid rgba(255, 255, 255, 0.08); width: 100%;">
+                  <div class="rf-ev-desc" style="font-size: 9.5px; color: var(--text-main); line-height: 1.35; margin-bottom: 4px;">${escapeHtml(formatEvidenceText(r, isEn))}</div>
+                  <div class="rf-ev-legal" style="font-size: 9px; color: var(--text-muted); margin-bottom: 6px;">
+                    <span class="font-bold" style="color: var(--text-main);">${isEn ? 'Statutory Reference: ' : 'আইনি ভিত্তি: '}</span>
+                    <span>${escapeHtml(formatLegalRefText(r, isEn))}</span>
+                  </div>
                   ${r.records.length > 0 ? `
-                    <div class="rf-ev-chips" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
-                      ${r.records.map(id => `
-                        <span class="record-copy-btn rf-chip-code" onclick="navigator.clipboard.writeText('${escapeHtml(id)}')" title="${isEn ? 'Copy' : 'কপি করুন'}">
-                          <code>${escapeHtml(id)}</code>
-                          ${(typeof ICONS !== 'undefined' && ICONS.copy) ? ICONS.copy : ''}
-                        </span>
-                      `).join('')}
+                    <div class="rf-ev-chips" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px;">
+                      ${r.records.map(id => {
+                        const upper = String(id || '').toUpperCase();
+                        let chipType = 'default';
+                        if (upper.includes('MATCH')) chipType = 'match';
+                        else if (upper.includes('CONFLICT') || upper.includes('KHAS')) chipType = 'conflict';
+                        else if (upper.includes('TAX')) chipType = 'tax';
+                        else if (upper.includes('DEED')) chipType = 'deed';
+                        else if (upper.includes('MUT')) chipType = 'mutation';
+
+                        return `
+                          <span class="record-copy-btn rf-chip-code chip-${chipType}" data-type="${chipType}" onclick="navigator.clipboard.writeText('${escapeHtml(id)}')" title="${isEn ? 'Copy' : 'কপি করুন'}">
+                            <code>${escapeHtml(id)}</code>
+                            ${(typeof ICONS !== 'undefined' && ICONS.copy) ? ICONS.copy : '📋'}
+                          </span>
+                        `;
+                      }).join('')}
                     </div>
                   ` : ''}
                 </div>

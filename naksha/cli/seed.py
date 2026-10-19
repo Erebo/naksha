@@ -313,6 +313,63 @@ def seed_postgres(target_url: str, yes: bool = False) -> Dict[str, int]:
             counts["agency_records"] += 1
 
         session.commit()
+
+        # 8. Seed Trust Ledger Benchmark Blocks if only Genesis or empty
+        from naksha.services.ledger import TrustLedger
+        ledger = TrustLedger(database_url=target_url)
+        existing_entries = ledger.get_entries(limit=100)
+        counts["ledger_entries"] = len(existing_entries)
+        if len(existing_entries) <= 1:
+            p401 = parcel_id_map.get("401")
+            p402 = parcel_id_map.get("402")
+            p403 = parcel_id_map.get("403")
+            ledger.record_verification(
+                event_type="ACCESS_GRANTED",
+                canonical_parcel_id=None,
+                dag_number=None,
+                mouza="কাশিমপুর",
+                verdict="CLEAR",
+                cited_records=["REGISTRY-MATCH:UL-2024-KSH"],
+                officer_id="UL-2024-KSH",
+            )
+            ledger.record_verification(
+                event_type="VERIFICATION_VERDICT",
+                canonical_parcel_id=str(p401) if p401 else None,
+                dag_number="401",
+                mouza="কাশিমপুর",
+                verdict="CLEAR",
+                cited_records=["DEED-2024-401", "MUT-2024-401"],
+                officer_id="UL-2024-KSH",
+            )
+            ledger.record_verification(
+                event_type="ACCESS_DENIED",
+                canonical_parcel_id=None,
+                dag_number=None,
+                mouza="Unknown",
+                verdict="DENIED",
+                cited_records=["UNKNOWN_OFFICER"],
+                officer_id="EXT-999-HACK",
+            )
+            ledger.record_verification(
+                event_type="VERIFICATION_VERDICT",
+                canonical_parcel_id=str(p403) if p403 else None,
+                dag_number="403",
+                mouza="কাশিমপুর",
+                verdict="REVIEW",
+                cited_records=["DEED-2024-403", "TAX-ARREARS-3YR"],
+                officer_id="UL-2024-KSH",
+            )
+            ledger.record_verification(
+                event_type="VERIFICATION_VERDICT",
+                canonical_parcel_id=str(p402) if p402 else None,
+                dag_number="402",
+                mouza="কাশিমপুর",
+                verdict="BLOCK",
+                cited_records=["KHAS-CANAL-OVERLAP-0.9DEC", "DLRS-BS-402"],
+                officer_id="UL-2024-KSH",
+            )
+            counts["ledger_entries"] = len(ledger.get_entries(limit=100))
+
         return counts
     except Exception:
         session.rollback()

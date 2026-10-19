@@ -983,17 +983,54 @@ iframe, :host {
   gap: 4px;
 }
 .record-copy-btn {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-dim);
-  font-size: 9px;
-  padding: 1px 5px;
-  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.28);
+  color: #2DD4BF;
+  font-size: 9.5px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 4px;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 .record-copy-btn:hover {
-  color: var(--text-main);
-  border-color: var(--text-muted);
+  filter: brightness(1.2);
+  transform: translateY(-0.5px);
+  border-color: currentColor;
+}
+.record-copy-btn.chip-match,
+.record-copy-btn[data-type="match"] {
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #34D399;
+}
+.record-copy-btn.chip-conflict,
+.record-copy-btn[data-type="conflict"] {
+  background: rgba(244, 63, 94, 0.12);
+  border-color: rgba(244, 63, 94, 0.35);
+  color: #FB7185;
+}
+.record-copy-btn.chip-tax,
+.record-copy-btn[data-type="tax"] {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.35);
+  color: #FCD34D;
+}
+.record-copy-btn.chip-deed,
+.record-copy-btn[data-type="deed"] {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38BDF8;
+}
+.record-copy-btn.chip-mutation,
+.record-copy-btn[data-type="mutation"] {
+  background: rgba(167, 139, 250, 0.12);
+  border-color: rgba(167, 139, 250, 0.35);
+  color: #C4B5FD;
 }
 
 .rules-passed-row {
