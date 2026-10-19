@@ -2,7 +2,7 @@
 
 # নকশা (NAKSHA)
 
-### AI-Powered Land Record Integrity Engine for Bangladesh
+### G2G Land Data Interoperability Engine
 
 **Cross-agency cadastral verification · 2D GIS spatial analysis · Cryptographic audit ledger**
 
@@ -99,7 +99,7 @@ flowchart TB
 
 ---
 
-## 🖼️ Screenshots
+## 🖥️ System Interface & Verification Walkthrough
 
 ### Extension Deployment → Portal Integration → Security Gate → Verification Cockpit
 
