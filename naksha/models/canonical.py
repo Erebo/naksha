@@ -18,6 +18,7 @@ from naksha.models.enums import (
     SpatialLayerType,
     TaxPaymentStatus,
 )
+from naksha.models.rules import RuleResult
 
 T = TypeVar("T")
 
@@ -367,6 +368,10 @@ class VerificationResult(BaseModel):
     discrepancies: list[Discrepancy] = Field(
         default_factory=list,
         description="List of all detected discrepancies or anomalies.",
+    )
+    rules: List[RuleResult] = Field(
+        default_factory=list,
+        description="Explicit 5-rule statutory evaluation results.",
     )
     spatial_layers: Optional[List[SurveyLayerSnapshot]] = Field(
         default=None,

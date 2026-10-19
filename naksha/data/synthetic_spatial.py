@@ -5,6 +5,7 @@ around Mouza Kashimpur, Gazipur Sadar.
 NOT AN OFFICIAL GOVERNMENT CADASTRAL BOUNDARY.
 FOR HACKATHON DEMONSTRATION AND TESTING PURPOSES ONLY.
 """
+import re
 from typing import List, Optional, Dict, Any
 from naksha.models.enums import SpatialLayerType, SurveyEra, TaxPaymentStatus
 from naksha.models.canonical import (
@@ -15,6 +16,7 @@ from naksha.models.canonical import (
     SurveyLayerSnapshot,
 )
 from naksha.spatial.engine import calculate_polygon_area, calculate_overlap
+from naksha.normalization.text import bangla_to_english_digits
 
 DISCLAIMER = "SYNTHETIC BENCHMARK GEOMETRY: NOT AN OFFICIAL GOVERNMENT CADASTRAL BOUNDARY"
 
@@ -89,14 +91,39 @@ NEIGHBOR_403_COORDS = [
 ]
 
 
-def normalize_parcel_key(parcel_id: str) -> str:
-    """Normalizes any parcel ID, dag number, or alias to 401, 402, or 403."""
-    pid = str(parcel_id).strip().lower()
-    if "401" in pid:
-        return "401"
-    if "403" in pid:
-        return "403"
-    return "402"
+SEEDED_PARCEL_MAP = {
+    "par-8f92-bd04-syn": "402",
+    "par-401-west-syn": "401",
+    "par-403-south-syn": "403",
+}
+
+
+def normalize_parcel_key(parcel_id: Optional[str]) -> Optional[str]:
+    """Normalizes any parcel ID, dag number, or alias to '401', '402', or '403'.
+
+    Parses Bengali and English digits as discrete tokens without substring matching.
+    Returns None for unseeded parcels (e.g. 999).
+    """
+    if not parcel_id:
+        return None
+    raw = str(parcel_id).strip().lower()
+
+    # Check exact canonical parcel id
+    if raw in SEEDED_PARCEL_MAP:
+        return SEEDED_PARCEL_MAP[raw]
+
+    # Convert Bengali digits to ASCII
+    converted = bangla_to_english_digits(raw)
+    if not converted:
+        return None
+
+    # Find standalone digit sequences (e.g. "401", "402", "403")
+    tokens = re.findall(r"\b\d+\b", converted)
+    for tok in tokens:
+        if tok in ("401", "402", "403"):
+            return tok
+
+    return None
 
 
 def get_synthetic_conflict_zone(parcel_id: str = "par-8f92-bd04-syn") -> Optional[SpatialConflictZone]:
@@ -130,6 +157,8 @@ def get_synthetic_conflict_zone(parcel_id: str = "par-8f92-bd04-syn") -> Optiona
 def get_synthetic_parcel_layers(parcel_id: str = "par-8f92-bd04-syn") -> List[SurveyLayerSnapshot]:
     """Builds the 4-layer 2D GIS visual stack tailored for the requested parcel (401, 402, or 403)."""
     key = normalize_parcel_key(parcel_id)
+    if key is None:
+        return []
     layers: List[SurveyLayerSnapshot] = []
 
     # 1. Ancestral CS Dag 88 Footprint (common historical ancestral root in Kashimpur)
@@ -239,8 +268,8 @@ def get_synthetic_parcel_layers(parcel_id: str = "par-8f92-bd04-syn") -> List[Su
             )
         )
 
-    else:
-        # Default: Dag 402 (Benchmark parcel with Khas canal conflict)
+    elif key == "402":
+        # Dag 402 (Benchmark parcel with Khas canal conflict)
         deed_geom = GeoJSONGeometry(type="Polygon", coordinates=DEED_CLAIM_402_COORDS)
         deed_dec, deed_sqm = calculate_polygon_area(deed_geom)
         layers.append(
@@ -328,6 +357,15 @@ def get_synthetic_parcel_layers(parcel_id: str = "par-8f92-bd04-syn") -> List[Su
 def get_synthetic_neighbor_parcels(parcel_id: str = "par-8f92-bd04-syn") -> GeoJSONFeatureCollection:
     """Returns surrounding/neighboring plots for the LD Tax context map, dynamically marking the target parcel."""
     key = normalize_parcel_key(parcel_id)
+    if key is None:
+        return GeoJSONFeatureCollection(
+            features=[],
+            metadata={
+                "target_parcel_id": parcel_id,
+                "mouza": "কাশিমপুর (Kashimpur)",
+                "disclaimer": DISCLAIMER,
+            },
+        )
     features: List[GeoJSONFeature] = []
 
     # Target Plot: BS 402

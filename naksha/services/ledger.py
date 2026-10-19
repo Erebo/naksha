@@ -24,7 +24,7 @@ class LedgerEntry(BaseModel):
     canonical_parcel_id: Optional[str] = Field(default=None, description="Target parcel UUID.")
     dag_number: Optional[str] = Field(default=None, description="Plot / Dag number queried.")
     mouza: Optional[str] = Field(default=None, description="Mouza name.")
-    officer_id: str = Field(default="UL-2024-KSH", description="Authenticated officer or session identifier.")
+    officer_id: str = Field(default="SYSTEM", description="Authenticated officer or session identifier.")
     verdict: Optional[str] = Field(default=None, description="Automated statutory decision verdict: CLEAR, REVIEW, or BLOCK.")
     cited_records: List[str] = Field(default_factory=list, description="IDs of records cross-referenced.")
     payload_hash: str = Field(description="SHA-256 digest of normalized event data payload.")
@@ -83,7 +83,7 @@ class TrustLedger:
         mouza: Optional[str],
         verdict: Optional[str],
         cited_records: List[str],
-        officer_id: str = "UL-2024-KSH",
+        officer_id: str = "SYSTEM",
     ) -> LedgerEntry:
         """Appends a new cryptographically signed, hash-chained entry to the Trust Ledger."""
         index = len(self._chain)

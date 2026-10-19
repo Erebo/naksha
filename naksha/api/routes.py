@@ -22,6 +22,7 @@ from naksha.data.synthetic_spatial import (
     get_synthetic_neighbor_parcels,
     get_synthetic_all_parcels_geojson,
     get_synthetic_conflict_zone,
+    normalize_parcel_key,
 )
 from naksha.services.verification import verify_record_against_cohort
 from naksha.services.ledger import audit_ledger, LedgerEntry
@@ -247,10 +248,10 @@ def verify_single_record(
         event_type="VERIFICATION_VERDICT",
         canonical_parcel_id=result.canonical_parcel_id,
         dag_number=record.dag_number.normalized_value if record.dag_number else None,
-        mouza=record.mouza.normalized_value if record.mouza else None,
+        mouza=record.mouza.normalized_value if record.mouza else "Unknown",
         verdict=result.verdict.value,
         cited_records=result.compared_record_ids,
-        officer_id="UL-2024-KSH",
+        officer_id="SYSTEM",
     )
     return result
 
@@ -336,6 +337,12 @@ def get_parcel_neighbors(parcel_id: str) -> GeoJSONFeatureCollection:
 
     (paid, arrears, payer mismatch) for rendering the Tax Map in the side panel.
     """
+    key = normalize_parcel_key(parcel_id)
+    if key is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Parcel '{parcel_id}' not found.",
+        )
     return get_synthetic_neighbor_parcels(parcel_id)
 
 
@@ -370,20 +377,34 @@ def get_parcel_verification(
     sealing the verdict and cited records into the append-only SHA-256 + Ed25519 Trust Ledger.
     """
     from naksha.services.verification import verify_parcel_by_id
-    from naksha.data.synthetic_spatial import normalize_parcel_key
+
+    key = normalize_parcel_key(parcel_id)
+    if key is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Parcel '{parcel_id}' not found.",
+        )
 
     result = verify_parcel_by_id(parcel_id, repo)
-    key = normalize_parcel_key(parcel_id)
+
+    # Use the record's mouza (fallback to 'Unknown'), and 'SYSTEM' as officer per standing rules
+    mouza = "Unknown"
+    if repo:
+        recs = repo.list_records(dag=key)
+        for r in recs:
+            if r.mouza and r.mouza.normalized_value:
+                mouza = r.mouza.normalized_value
+                break
 
     # Record into cryptographic Trust Ledger
     audit_ledger.record_verification(
         event_type="VERIFICATION_VERDICT",
         canonical_parcel_id=result.canonical_parcel_id,
         dag_number=key,
-        mouza="কাশিমপুর (Kashimpur)",
+        mouza=mouza,
         verdict=result.verdict.value,
         cited_records=result.compared_record_ids,
-        officer_id="UL-2024-KSH",
+        officer_id="SYSTEM",
     )
     return result
 
